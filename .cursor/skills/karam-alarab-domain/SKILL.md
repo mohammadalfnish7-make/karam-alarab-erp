@@ -46,7 +46,7 @@ Defer: public customer portal, sea as a first-class mode, fleet master, Arabic U
 
 ## Money, time, identifiers
 
-- Currency: AED. Store as decimal (Prisma `Decimal` / numeric). Never IEEE float.
+- Currency: AED. Store as `decimal.Decimal`. Never IEEE float.
 - Display amounts with a thin space thousands separator and 2 fraction digits unless the user asks otherwise.
 - Store timestamps in UTC. Display `Asia/Dubai`. Booking hours on the site are Mo–Fr 08:30–17:30 Dubai time.
 - Phone example from the site: `+971 58 304 2287`. Store E.164.

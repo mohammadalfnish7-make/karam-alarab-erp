@@ -5,9 +5,10 @@ alwaysApply: true
 
 # Karam Al Arab ERP
 
-Internal logistics and trading ERP for karam-alarab.com. Read `AGENTS.md`, `.cursor/skills/karam-alarab-domain/SKILL.md`, and `.cursor/skills/ddd-architecture/SKILL.md` before any change.
+Internal logistics and trading ERP for karam-alarab.com. Read `AGENTS.md`, `.cursor/skills/karam-alarab-domain/SKILL.md`, `.cursor/skills/ddd-architecture/SKILL.md`, and `.cursor/skills/tech-stack/SKILL.md` before any change.
 
 - Architecture is DDD (modular monolith, bounded contexts, small aggregates).
+- Stack is FastAPI + React. No NestJS, Next.js, or Prisma.
 - English default, Russian in the same release. Prepare RTL, do not ship Arabic yet.
 - Domain words: shipment, cargo, 3PL, FTL, LTL, trading, compensation.
 - Money: decimal AED. Time: store UTC, show Asia/Dubai.

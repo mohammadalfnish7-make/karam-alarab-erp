@@ -1,6 +1,6 @@
 ---
 description: Senior frontend standards for ERP UI code
-globs: "{apps/web,packages}/**/*.{ts,tsx,css}"
+globs: "apps/web/**/*.{ts,tsx,css}"
 alwaysApply: false
 ---
 

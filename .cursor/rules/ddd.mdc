@@ -9,6 +9,6 @@ Read `.cursor/skills/ddd-architecture/SKILL.md` before adding modules, tables, o
 
 - Modular monolith. One process. Eight bounded contexts. No microservices.
 - One aggregate instance per transaction. Other aggregates by id. Cross-context via events.
-- Domain layer has no Nest, Prisma, or HTTP imports.
-- Transport DTOs and Prisma rows are not the domain model.
+- Domain layer has no FastAPI, Pydantic, SQLAlchemy, or HTTP imports.
+- Transport DTOs and SQLAlchemy rows are not the domain model.
 - Business rules live on the aggregate, not only in validators or controllers.

@@ -1,0 +1,14 @@
+---
+description: Decided stack — FastAPI backend, React frontend, latest stable versions
+alwaysApply: true
+---
+
+# Stack
+
+Read `.cursor/skills/tech-stack/SKILL.md` and `.cursor/skills/tech-stack/versions.md`.
+
+- Backend: latest stable Python, FastAPI, SQLAlchemy 2.x, Alembic, PostgreSQL.
+- Frontend: latest stable React, TypeScript, Vite, React Router, TanStack Query on Node LTS.
+- Always install registry `latest` that is not RC/beta/yanked. Pin in lockfiles.
+- Pydantic and SQLAlchemy stay at the edges. Domain is plain Python.
+- Do not add NestJS, Next.js, or Prisma.

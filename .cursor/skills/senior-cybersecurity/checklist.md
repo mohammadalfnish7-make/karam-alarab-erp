@@ -20,8 +20,8 @@ Copy this into the PR or chat. Mark each line `pass`, `n/a`, or `fail` with a on
 
 - [ ] Transport DTO is not the domain model; map at the interface adapter
 - [ ] DTO rejects unknown fields (mass assignment)
-- [ ] Domain invariants run on the aggregate (status, money, stock), not only class-validator
-- [ ] Prisma parameterized; no string-built SQL; persist one aggregate per transaction
+- [ ] Domain invariants run on the aggregate (status, money, stock), not only Pydantic validators
+- [ ] SQLAlchemy parameterized; no string-built SQL; persist one aggregate per transaction
 - [ ] Upload allowlist and size cap (or no uploads in this change)
 - [ ] JSON error envelope has no stack trace
 

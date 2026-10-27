@@ -41,16 +41,16 @@ Reject any other transition with `409`.
 
 ```
 freight/
-  freight.module.ts              # Nest composition root only
-  domain/shipment.ts             # aggregate root
-  domain/ports.ts
-  application/book-shipment.handler.ts
-  infrastructure/prisma-shipment.repository.ts
-  interface/shipment.controller.ts
-  interface/shipment.dto.ts
+  router.py                              # FastAPI APIRouter, composition only
+  domain/shipment.py                     # aggregate root
+  domain/ports.py
+  application/book_shipment.py
+  infrastructure/sqlalchemy_shipment_repository.py
+  interface/shipment_router.py
+  interface/shipment_dto.py              # Pydantic, extra="forbid"
 ```
 
-Controller does not inject the repository. Handler does not import Prisma.
+Router does not use the SQLAlchemy session for business rules. Handler does not import FastAPI.
 
 ## Headers
 

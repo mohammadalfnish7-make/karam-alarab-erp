@@ -3,21 +3,26 @@
 ## App layout
 
 ```
-apps/web/app/[locale]/(app)/
-  layout.tsx          # shell: nav, user, locale
-  page.tsx            # dashboard
-  customers/
-  quotes/
-  shipments/
-  warehouse/
-  trading/
-  invoices/
-apps/web/components/  # ui primitives and domain widgets
-apps/web/messages/en.json
-apps/web/messages/ru.json
+apps/web/src/
+  main.tsx
+  routes/
+    en/
+    ru/                 # same screens, locale from path
+  pages/
+    dashboard.tsx
+    customers/
+    quotes/
+    shipments/
+    warehouse/
+    trading/
+    invoices/
+  components/
+  locales/en.json
+  locales/ru.json
+  api/                  # generated OpenAPI client
 ```
 
-Route groups stay behind auth. Locale is in the path (`/en/shipments`, `/ru/shipments`).
+Authenticated layout wraps ops routes. Locale is in the path (`/en/shipments`, `/ru/shipments`).
 
 ## Component rules
 
@@ -29,15 +34,17 @@ Route groups stay behind auth. Locale is in the path (`/en/shipments`, `/ru/ship
 ## Fetching
 
 ```ts
-// Good: server component loads the first page
-const shipments = await api.shipments.list({ status, page });
+// Good: query key + generated client
+const { data } = useQuery({
+  queryKey: ['shipments', { status, page }],
+  queryFn: () => api.listShipments({ status, page }),
+});
 
-// Good: client mutations via query client
 await queryClient.invalidateQueries({ queryKey: ['shipments'] });
 
 // Bad
 const [shipments, setShipments] = useState([]);
-useEffect(() => { fetch('/api/shipments').then(...) }, []);
+useEffect(() => { fetch('/shipments').then(...) }, []);
 ```
 
 ## Forms

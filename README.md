@@ -4,7 +4,7 @@ Internal operations platform for **Karam Al Arab**, a Sharjah-based contract log
 
 After this platform ships, warehouse, freight, trading, finance, and support staff run the company in one system: customers, quotes, shipments, stock, invoices, and tracking — with English and Russian from day one.
 
-This repository is the product source of truth. Application code is not in the tree yet. Agent skills, Cursor rules, and this README define how we design, build, test, and secure it.
+This repository is the product source of truth. Application code lives in `apps/api` (FastAPI) and `apps/web` (React). Agent skills, Cursor rules, and this README define how we design, build, test, and secure it.
 
 ## Company facts (from the live site)
 
@@ -41,8 +41,9 @@ Every implementation, review, or test in this repo loads the matching senior ski
 | --- | --- | --- |
 | Company language, users, money, locales | `.cursor/skills/karam-alarab-domain/` | always |
 | Bounded contexts, aggregates, domain events | `.cursor/skills/ddd-architecture/` | `ddd.mdc` (always) |
-| UI code, React, Next.js, TypeScript | `.cursor/skills/senior-frontend/` | `frontend.mdc` |
-| APIs, NestJS adapters, Prisma mapping | `.cursor/skills/senior-backend/` | `backend.mdc` |
+| Decided runtimes (FastAPI + React) | `.cursor/skills/tech-stack/` | `stack.mdc` (always) |
+| UI code, React, Vite, TypeScript | `.cursor/skills/senior-frontend/` | `frontend.mdc` |
+| APIs, FastAPI adapters, SQLAlchemy mapping | `.cursor/skills/senior-backend/` | `backend.mdc` |
 | Layout, brand, accessibility, workflows | `.cursor/skills/senior-ui-ux/` | `ui-ux.mdc` |
 | Manual cases and Playwright | `.cursor/skills/senior-qa/` | `qa.mdc` |
 | Threat model, OWASP, ASVS checks | `.cursor/skills/senior-cybersecurity/` | `cybersecurity.mdc` |
@@ -78,23 +79,24 @@ Ops staff in Sharjah can create a customer, quote a shipment or trading order, m
 
 **Domain-Driven Design modular monolith.** Not table-CRUD, not microservices.
 
-Eight bounded contexts in one NestJS process and one PostgreSQL database: IdentityAccess, CRM, Commercial, Freight, Warehouse, Trading, Finance, Audit. Each context owns its tables and aggregates. Contexts collaborate by identity (`CustomerId`, `ShipmentId`) and domain/integration events. One aggregate per transaction. Domain code has no Nest or Prisma imports.
+Eight bounded contexts in one FastAPI process and one PostgreSQL database: IdentityAccess, CRM, Commercial, Freight, Warehouse, Trading, Finance, Audit. Each context owns its tables and aggregates. Contexts collaborate by identity (`CustomerId`, `ShipmentId`) and domain/integration events. One aggregate per transaction. Domain code has no FastAPI, Pydantic, or SQLAlchemy imports.
 
 Details: `.cursor/skills/ddd-architecture/`.
 
-Adapter stack (unchanged):
+### Stack (decided)
 
-- `apps/web` — Next.js App Router, React, Tailwind, shadcn/ui
-- `apps/api` — NestJS adapters around DDD modules, Prisma, PostgreSQL
-- `packages/shared` — shared kernel only (`Money`, branded ids, permission names)
-- Playwright in `apps/web` against a real local API + database
-- Deploy later as a Node.js app (Hostinger is the likely host; confirm before first production push)
+- `apps/api` — latest stable Python, FastAPI, SQLAlchemy 2.x, Alembic, PostgreSQL
+- `apps/web` — latest stable React, TypeScript, Vite, React Router, TanStack Query, Tailwind (Node LTS)
+- Contract — FastAPI OpenAPI; React generates TS types from it
+- Tests — latest stable pytest and Playwright
+- Versions — re-check PyPI/npm before every install; snapshot in `.cursor/skills/tech-stack/versions.md`
+- Deploy later as a Python API + static React (confirm host before first production push)
 
-Assumption that would change the **adapter** (not DDD): a different HTTP framework. Bounded contexts stay.
+DDD stays if the host changes. Do not add NestJS, Next.js, or Prisma.
 
 ### Sequence
 
-1. DDD skeleton — context folders, shared kernel, IdentityAccess login
+1. DDD skeleton — context folders, shared kernel, IdentityAccess login **(in tree)**
 2. CRM + Commercial — a cosmetics weekly quote can be stored
 3. Freight — air or road shipment status is visible
 4. Warehouse — receive and pick trading SKUs
@@ -102,6 +104,31 @@ Assumption that would change the **adapter** (not DDD): a different HTTP framewo
 6. i18n RU parity and Playwright critical paths on CI
 
 Each step must be reversible and demoable on its own.
+
+### Run locally
+
+Default API database is SQLite (`apps/api/var/karam.db`) so the skeleton can be demoed without Docker. PostgreSQL 18 is the production database; `docker compose up db` then set `DATABASE_URL`.
+
+```bash
+# API
+cd apps/api
+cp .env.example .env
+# Set ENVIRONMENT=development, SEED_ADMIN_PASSWORD (12+ chars), WEB_ORIGIN=http://127.0.0.1:5173
+uv sync
+uv run uvicorn main:app --app-dir src --reload --port 8000
+
+# Web (second terminal)
+cd apps/web
+npm install
+npm run dev
+```
+
+Open [http://127.0.0.1:5173/en/login](http://127.0.0.1:5173/en/login). Sign in with `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`. Russian: `/ru/login`.
+
+```bash
+cd apps/api && uv run pytest
+cd apps/web && npm run build
+```
 
 ### Risks
 
@@ -114,7 +141,6 @@ Each step must be reversible and demoable on its own.
 
 - Confirm whether warehouse is bonded / free-zone (affects Warehouse aggregates)
 - Confirm who the first live users are (ops, sales, warehouse)
-- NestJS vs another HTTP adapter — DDD stays either way
 
 ## Brand (extracted from the live site)
 
@@ -154,3 +180,6 @@ Do not invent SAP-style jargon (plant, sto, vbdk) unless a user asks for it.
 - [OWASP ASVS 5.0](https://github.com/OWASP/ASVS/releases/tag/v5.0.0_release)
 - [Microsoft tactical DDD](https://learn.microsoft.com/en-us/azure/architecture/microservices/model/tactical-domain-driven-design)
 - [Vernon — Effective Aggregate Design](https://kalele.io/wp-content/uploads/2019/01/DDD_COMMUNITY_ESSAY_AGGREGATES_PART_2.pdf)
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [SQLAlchemy](https://docs.sqlalchemy.org/)
+- [Vite](https://vite.dev/guide/)

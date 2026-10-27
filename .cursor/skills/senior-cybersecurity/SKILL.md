@@ -31,9 +31,9 @@ Trust boundary: browser is untrusted. The API enforces every rule. Object ids in
 | --- | --- | --- |
 | A01 Broken Access Control | IDOR on shipment/invoice/customer ids | Check object ownership on every read/write. 404 if the caller must not know it exists |
 | A02 Security Misconfiguration | Open CORS, debug routes, default secrets | Allowlist origin. No debug in production. Config from env |
-| A03 Software Supply Chain Failures | npm/Prisma compromise | Lockfile committed. Review new deps. Pin versions |
+| A03 Software Supply Chain Failures | npm/uv/PyPI compromise | Lockfiles committed (`uv.lock`, web lockfile). Review new deps. Pin versions |
 | A04 Cryptographic Failures | Weak password hash, tokens in logs | TLS in production. Hashed secrets. No PAN/passwords in logs |
-| A05 Injection | Search filters, tracking notes | Parameterized Prisma only. Encode output in the UI |
+| A05 Injection | Search filters, tracking notes | SQLAlchemy bound parameters only. Encode output in the UI |
 | A06 Insecure Design | Status skipped, invoice without review | Invariants on the aggregate. Dual control for money posts. No cross-context FK writes |
 | A07 Authentication Failures | Credential stuffing on login | Rate limit. Generic login error. Session rotation on login |
 | A08 Software or Data Integrity Failures | Unsigned webhooks, raw uploads | Verify webhooks. Scan/allowlist upload types |
@@ -47,8 +47,8 @@ Trust boundary: browser is untrusted. The API enforces every rule. Object ids in
 - **API4** — timeouts, payload size limits, pagination caps, rate limits on login and quote create.
 - **API6** — booking and claim creation are business flows; rate-limit and require a human role, not an open token.
 - **API7 SSRF** — if we ever fetch a customer-supplied URL (tracking widget, document), allowlist schemes/hosts. Prefer not to fetch user URLs at all in v1.
-- **API8** — security headers, no directory listing, no default Nest error page in prod.
-- **API9** — inventory of routes. Remove unused controllers. No leftover `/create-order` debug.
+- **API8** — security headers, no directory listing, no default FastAPI debug traces in prod.
+- **API9** — inventory of routes. Remove unused routers. No leftover `/create-order` debug.
 - **API10** — treat carrier/customs APIs as untrusted input.
 
 ## ASVS 5.0 Level 2 (selected)

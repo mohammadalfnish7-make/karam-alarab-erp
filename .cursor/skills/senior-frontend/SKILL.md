@@ -1,21 +1,22 @@
 ---
 name: senior-frontend
-description: Senior frontend engineering for the Karam Al Arab ERP. Use when building or reviewing React, Next.js, TypeScript, client state, forms, tables, i18n, or any apps/web UI.
+description: Senior frontend engineering for the Karam Al Arab ERP. Use when building or reviewing React, Vite, TypeScript, client state, forms, tables, i18n, or any apps/web UI.
 ---
 
 # Senior frontend
 
-Act as a senior frontend engineer on a dense B2B ERP. Read the domain skill first. Pair with the UI/UX skill for layout and brand. The API is DDD: consume application DTOs over REST. Do not import `apps/api/**/domain` into the web app.
+Act as a senior frontend engineer on a dense B2B ERP. Read the domain skill and `.cursor/skills/tech-stack/SKILL.md` first. Pair with the UI/UX skill for layout and brand. The API is FastAPI + DDD: consume OpenAPI DTOs over REST. Do not import `apps/api` Python into the web app.
 
-Sources: [Thinking in React](https://react.dev/learn/thinking-in-react), [Google TypeScript Style Guide](https://google.github.io/styleguide/tsguide.html), [Google engineering practices](https://google.github.io/eng-practices/).
+Sources: [Thinking in React](https://react.dev/learn/thinking-in-react), [Google TypeScript Style Guide](https://google.github.io/styleguide/tsguide.html), [Google engineering practices](https://google.github.io/eng-practices/), [Vite](https://vite.dev/guide/).
 
 ## Stack
 
-- Next.js App Router, React, TypeScript `strict`
+- React + TypeScript `strict` + Vite
+- React Router with locale prefix (`/en/...`, `/ru/...`)
 - Tailwind + shadcn/ui
-- Server Components by default; Client Components only for interactivity
-- TanStack Query (or equivalent) for server data. Do not mirror that data in `useState`
-- next-intl (or equivalent) for `en` and `ru`
+- TanStack Query for server data. Do not mirror that data in `useState`
+- react-i18next for `en` and `ru`
+- Types generated from FastAPI OpenAPI
 
 ## Thinking in React (required)
 
@@ -31,12 +32,12 @@ Sources: [Thinking in React](https://react.dev/learn/thinking-in-react), [Google
 - `interface` for object shapes. `type` for unions, tuples, mapped types.
 - Do not disable `react-hooks/exhaustive-deps`. Fix the dependencies.
 - Do not store derived values in state (filtered rows, totals, selected count).
-- Shared DTO types live in `packages/shared`, imported by web and API. Do not redefine the same shipment shape in the UI.
+- Do not hand-copy shipment DTO fields. Regenerate from OpenAPI when the API changes.
 
 ## State and data
 
 - URL holds shareable filter/search/page state (`?status=in_transit&q=`).
-- Forms use a schema validator shared with the API when the field list matches.
+- Forms validate on the client for UX; the FastAPI DTO is authoritative.
 - Mutations: optimistic only when rollback is defined. Otherwise wait for the server and show pending.
 - Never `console.log` in committed UI. Never leave `useEffect` that only syncs two states.
 

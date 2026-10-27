@@ -1,22 +1,22 @@
 ---
 name: senior-backend
-description: Senior backend engineering for the Karam Al Arab ERP. Use when designing or changing NestJS adapters, REST APIs, Prisma mapping, auth, jobs, or any apps/api infrastructure around DDD bounded contexts.
+description: Senior backend engineering for the Karam Al Arab ERP. Use when designing or changing FastAPI routers, Pydantic DTOs, SQLAlchemy mapping, Alembic migrations, auth, jobs, or any apps/api infrastructure around DDD bounded contexts.
 ---
 
 # Senior backend
 
-Act as a senior backend engineer **implementing the DDD architecture**. Read `.cursor/skills/ddd-architecture/SKILL.md` first, then the domain skill and the cybersecurity skill before touching auth, money, or object ids.
+Act as a senior backend engineer **implementing the DDD architecture on FastAPI**. Read `.cursor/skills/ddd-architecture/SKILL.md` and `.cursor/skills/tech-stack/SKILL.md` first, then the domain skill and the cybersecurity skill before touching auth, money, or object ids.
 
-Sources: [Microsoft REST API design](https://learn.microsoft.com/en-us/azure/architecture/best-practices/api-design), [Twelve-Factor App](https://12factor.net/), NestJS as the HTTP adapter, Google eng practices.
+Sources: [FastAPI](https://fastapi.tiangolo.com/), [SQLAlchemy](https://docs.sqlalchemy.org/), [Microsoft REST API design](https://learn.microsoft.com/en-us/azure/architecture/best-practices/api-design), [Twelve-Factor App](https://12factor.net/). Use the latest stable versions from `.cursor/skills/tech-stack/versions.md`.
 
 ## Architecture
 
-DDD modular monolith. NestJS is the interface adapter, Prisma is infrastructure. Bounded context folders:
+DDD modular monolith. FastAPI is the interface adapter. SQLAlchemy is infrastructure. Bounded context packages:
 
 ```
 apps/api/src/
-  shared-kernel/
-  identity-access/
+  shared_kernel/
+  identity_access/
   crm/
   commercial/
   freight/
@@ -24,14 +24,15 @@ apps/api/src/
   trading/
   finance/
   audit/
+  main.py
 ```
 
-Each context: `domain/`, `application/`, `infrastructure/`, `interface/`. Domain imports neither Nest nor Prisma.
+Each context: `domain/`, `application/`, `infrastructure/`, `interface/`. Domain imports neither FastAPI, Pydantic, nor SQLAlchemy.
 
-- Controllers adapt HTTP: auth, validate transport DTO, dispatch one application command, map the result.
+- Routers adapt HTTP: auth, validate Pydantic DTO (`extra="forbid"`), dispatch one application command, map the result.
 - Application handlers load **one** aggregate, call a domain method, save, publish events.
 - Other contexts are not called through their repositories. Use identity + events.
-- No `forwardRef()` as a design tool. Cycles mean the bounded context is wrong.
+- Composition root is `main.py` plus each context’s FastAPI `APIRouter`. Cycles mean the bounded context is wrong.
 
 ## REST
 
@@ -41,22 +42,23 @@ Each context: `domain/`, `application/`, `infrastructure/`, `interface/`. Domain
 - Filter/sort/page with query params: `GET /shipments?status=in_transit&page=1&pageSize=25`.
 - Keep URIs shallow: `/customers/{id}/shipments`, then `/shipments/{id}`. Not `/customers/1/orders/99/products`.
 - Version only when a breaking change is unavoidable (`/v1`). Do not version on day one without a reason.
+- OpenAPI from FastAPI is the contract the React app generates types from. Keep operation ids stable.
 
 ## Data
 
-- PostgreSQL. Prisma migrations in source control.
-- Money: `Decimal`. Quantities that can be fractional (kg, CBM) are decimal. Counts are integers.
+- PostgreSQL (latest stable major). Alembic migrations in source control.
+- Money: `decimal.Decimal`. Quantities that can be fractional (kg, CBM) are decimal. Counts are integers.
 - Soft-delete only when finance or audit needs the row. Otherwise hard delete inside a transaction with audit.
 - Every mutating use case writes an audit row: actor, action, entity, before/after summary.
 - Idempotency key on `POST /quotes` and `POST /shipments` so a double click does not double-book.
 
 ## Authn / authz
 
-- Session or server-issued token. No secrets in the client bundle.
-- Deny by default. Permission names are `{module}:{action}` (`shipments:update`).
-- **Object-level checks on every id.** A user with `shipments:read` still cannot read another customer’s shipment.
+- Session or server-issued token in an HttpOnly cookie. No secrets in the client bundle.
+- Deny by default. Permission names are `{context}:{action}` (`freight:update`).
+- **Object-level checks on every id.** A user with `freight:read` still cannot read another customer’s shipment.
 - Never trust `X-User-Id` or `X-Forwarded-*` from the browser. If a proxy sets them, overwrite at the edge.
-- Passwords hashed with a modern KDF (Argon2id or bcrypt cost ≥ 12). MFA is a later increment; design the user table so it can be added.
+- Passwords hashed with Argon2. MFA is a later increment; design the user table so it can be added.
 
 ## Twelve-factor
 
@@ -64,19 +66,19 @@ Each context: `domain/`, `application/`, `infrastructure/`, `interface/`. Domain
 - Backing services (Postgres, SMTP, object storage) are swappable by URL.
 - Logs as structured JSON to stdout. Request id on every line.
 - Processes are stateless. Uploads go to object storage, not the local disk of a web node.
-- Admin tasks are one-off commands (`prisma migrate deploy`), not hidden HTTP routes.
+- Admin tasks are one-off commands (`alembic upgrade head`), not hidden HTTP routes.
 
 ## Validation and errors
 
-- Validate transport at the interface (DTO). Reject unknown fields (blocks mass assignment).
-- Enforce invariants on the aggregate. Status machines and money totals are domain methods, not `class-validator` alone.
+- Validate transport at the interface (Pydantic). Reject unknown fields.
+- Enforce invariants on the aggregate. Status machines and money totals are domain methods, not Pydantic validators alone.
 - Do not leak stack traces. Map domain errors to the status codes above (`409` for illegal transitions).
 - One aggregate per transaction. Money, stock, and status each live on their own root.
 
 ## Done
 
-- Module has tests for the use case (happy path + forbidden id + validation).
+- Context has pytest for the use case (happy path + forbidden id + validation).
 - Migration is reversible or has an explicit expand/contract note.
 - Cybersecurity checklist items for the touched endpoints are marked.
 
-See [reference.md](reference.md) for status codes, pagination, and module template.
+See [reference.md](reference.md) for status codes, pagination, and context template.

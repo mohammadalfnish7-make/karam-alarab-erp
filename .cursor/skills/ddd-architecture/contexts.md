@@ -64,23 +64,23 @@ Build contexts in this order: IdentityAccess → CRM → Commercial → Freight 
 ```
 apps/api/src/freight/
   domain/
-    shipment.ts                 # aggregate root
-    tracking-event.ts
-    cargo.ts                    # value object
-    transport-mode.ts
-    shipment-status.ts
-    events.ts
-    ports.ts                    # ShipmentRepository
+    shipment.py                 # aggregate root
+    tracking_event.py
+    cargo.py                    # value object
+    transport_mode.py
+    shipment_status.py
+    events.py
+    ports.py                    # ShipmentRepository protocol
   application/
-    book-shipment.handler.ts
-    move-shipment.handler.ts
-    get-shipment.handler.ts
+    book_shipment.py
+    move_shipment.py
+    get_shipment.py
   infrastructure/
-    prisma-shipment.repository.ts
-    shipment.mapper.ts
+    sqlalchemy_shipment_repository.py
+    shipment_mapper.py
   interface/
-    shipment.controller.ts
-    shipment.dto.ts
+    shipment_router.py
+    shipment_dto.py
 ```
 
 `book-shipment.handler.ts` loads nothing from Finance. After save, it publishes `ShipmentBooked`.

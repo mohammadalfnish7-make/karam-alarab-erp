@@ -1,6 +1,6 @@
 ---
 name: ddd-architecture
-description: Domain-Driven Design architecture for the Karam Al Arab ERP. Use when planning modules, folders, aggregates, domain events, Prisma schema, NestJS structure, or any backend change. First architecture decision: DDD modular monolith, not a CRUD layered app and not microservices.
+description: Domain-Driven Design architecture for the Karam Al Arab ERP. Use when planning modules, folders, aggregates, domain events, SQLAlchemy mapping, FastAPI structure, or any backend change. First architecture decision: DDD modular monolith, not a CRUD layered app and not microservices.
 ---
 
 # DDD architecture
@@ -17,7 +17,7 @@ Every feature lands in one bounded context, mutates one aggregate per transactio
 
 ## Strategic map
 
-One NestJS process, one PostgreSQL database, **eight bounded contexts**. Each context owns its tables. No foreign keys across contexts. No shared Prisma models of another context’s entities.
+One FastAPI process, one PostgreSQL database, **eight bounded contexts**. Each context owns its tables. No foreign keys across contexts. No shared SQLAlchemy models of another context’s entities.
 
 ```mermaid
 flowchart LR
@@ -85,21 +85,21 @@ Only types that are truly shared: `Money` (AED), branded ids (`CustomerId`, `Shi
 6. **Value objects are immutable and have no identity:** `Money`, `WeightKg`, `VolumeCbm`, `Address`, `TemperatureNote`, `CargoMode`.
 7. **Domain events** name something the business cares about (`ShipmentBooked`), not “row updated”.
 8. **Application layer** is one use case / command: load aggregate, call a domain method, save, publish events. No business rules in controllers.
-9. **Domain folder imports nothing from Nest, Prisma, or HTTP.** Infrastructure implements ports.
+9. **Domain folder imports nothing from FastAPI, Pydantic, SQLAlchemy, or HTTP.** Infrastructure implements ports.
 
 ## Layers inside each context
 
 ```
 apps/api/src/freight/
-  domain/           # entities, value objects, domain events, ports (interfaces)
+  domain/           # entities, value objects, domain events, ports (protocols)
   application/      # commands, queries, handlers
-  infrastructure/   # Prisma repositories, mappers
-  interface/        # Nest controllers, transport DTOs
+  infrastructure/   # SQLAlchemy repositories, mappers
+  interface/        # FastAPI routers, Pydantic DTOs
 ```
 
 Dependency direction: `interface → application → domain ← infrastructure`.
 
-Transport DTOs are not domain objects. Prisma rows are not domain objects. Map at the edges.
+Transport DTOs are not domain objects. SQLAlchemy rows are not domain objects. Map at the edges.
 
 ## Input and output (security + DDD)
 
@@ -108,9 +108,9 @@ The cybersecurity checklist “Input / output” line is not the whole story:
 - **Interface:** reject unknown JSON fields (mass assignment).
 - **Application:** authorize the caller for this aggregate id.
 - **Domain:** enforce invariants (`Shipment.book()` refuses `delivered → draft`).
-- **Infrastructure:** Prisma parameterized writes of the aggregate only.
+- **Infrastructure:** SQLAlchemy parameterized writes of the aggregate only.
 
-Never put the status machine or money rules only in `class-validator`.
+Never put the status machine or money rules only on the Pydantic DTO.
 
 ## Explicitly not now
 
