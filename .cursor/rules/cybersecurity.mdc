@@ -1,6 +1,6 @@
 ---
 description: Senior cybersecurity — defensive checks only
-globs: "{apps/api/**/*.py,apps/web/**/*.{ts,tsx}}"
+globs: "{backend/**/*.py,frontend/**/*.{ts,tsx},apps/web/**/*.{ts,tsx}}"
 alwaysApply: false
 ---
 

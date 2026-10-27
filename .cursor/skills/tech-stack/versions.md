@@ -6,7 +6,7 @@ Checked **27 Oct 2026** from python.org, PyPI `latest`, npm `latest`, nodejs.org
 
 | Piece | Latest stable | Source | Notes |
 | --- | --- | --- | --- |
-| Python | **3.15.2** (repo runs **3.14.7**) | [python.org](https://www.python.org/downloads/release/python-3152/) | 3.16 is pre-release. uv has no 3.15.2 build yet (only `3.15.0rc1`). `apps/api` pins `>=3.14,<3.16` until 3.15 is on uv without RC. |
+| Python | **3.15.2** (repo runs **3.14.7**) | [python.org](https://www.python.org/downloads/release/python-3152/) | 3.16 is pre-release. uv has no 3.15.2 build yet (only `3.15.0rc1`). `backend/core` pins `>=3.14,<3.16` until 3.15 is on uv without RC. |
 | Node.js | **24.22.1 LTS** (Krypton) | [nodejs.org](https://nodejs.org/en/blog/release/v24.22.1) | 26.12.1 is Current, not LTS. Use LTS for this ERP. React Router needs ≥22.22. |
 | PostgreSQL | **18.6** | [postgresql.org](https://www.postgresql.org/docs/release/18.6/) | 19 is RC. Skip RC. |
 

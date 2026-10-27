@@ -1,6 +1,6 @@
 ---
 description: Senior backend standards for API, data, and auth
-globs: "{apps/api}/**/*.{py,sql}"
+globs: "{backend}/**/*.{py,sql}"
 alwaysApply: false
 ---
 

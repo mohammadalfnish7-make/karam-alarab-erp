@@ -15,8 +15,8 @@ blob-report/
 .vscode/
 .idea/
 
-apps/api/var/*.db
-apps/web/playwright/.cache/
+backend/core/var/*.db
+frontend/**/playwright/.cache/
 
 # Python
 .venv/

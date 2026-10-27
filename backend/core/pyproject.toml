@@ -1,0 +1,37 @@
+[project]
+name = "karam-alarab-api"
+version = "0.1.0"
+description = "Karam Al Arab ERP API — IdentityAccess core"
+readme = "README.md"
+requires-python = ">=3.14,<3.16"
+dependencies = [
+    "fastapi>=0.162.0",
+    "uvicorn[standard]>=0.54.0",
+    "pydantic>=2.14.1",
+    "pydantic-settings>=2.16.1",
+    "sqlalchemy>=2.1.6",
+    "alembic>=1.20.1",
+    "psycopg[binary]>=3.3.6",
+    "argon2-cffi>=25.1.0",
+    "email-validator>=2.2.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "httpx>=0.28.1",
+    "ruff>=0.17.3",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "tests"]
+testpaths = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]

@@ -1,6 +1,6 @@
 ---
 name: senior-backend
-description: Senior backend engineering for the Karam Al Arab ERP. Use when designing or changing FastAPI routers, Pydantic DTOs, SQLAlchemy mapping, Alembic migrations, auth, jobs, or any apps/api infrastructure around DDD bounded contexts.
+description: Senior backend engineering for the Karam Al Arab ERP. Use when designing or changing FastAPI routers, Pydantic DTOs, SQLAlchemy mapping, Alembic migrations, auth, jobs, or any backend/ infrastructure around DDD bounded contexts.
 ---
 
 # Senior backend
@@ -14,20 +14,18 @@ Sources: [FastAPI](https://fastapi.tiangolo.com/), [SQLAlchemy](https://docs.sql
 DDD modular monolith. FastAPI is the interface adapter. SQLAlchemy is infrastructure. Bounded context packages:
 
 ```
-apps/api/src/
-  shared_kernel/
-  identity_access/
-  crm/
-  commercial/
-  freight/
-  warehouse/
-  trading/
-  finance/
-  audit/
+backend/core/src/          # first slice (IdentityAccess) — see backend/core/INDEX.md
   main.py
+  config/
+  database/                # all SQLAlchemy models + repositories
+  domain/shared/
+  domain/identity/
+  application/
+  api/
+  support/
 ```
 
-Each context: `domain/`, `application/`, `infrastructure/`, `interface/`. Domain imports neither FastAPI, Pydantic, nor SQLAlchemy.
+Later bounded contexts add folders under `backend/` (e.g. `backend/freight/`). Inside a slice, keep domain free of FastAPI, Pydantic, and SQLAlchemy. Persistence code stays under that slice’s `database/` folder.
 
 - Routers adapt HTTP: auth, validate Pydantic DTO (`extra="forbid"`), dispatch one application command, map the result.
 - Application handlers load **one** aggregate, call a domain method, save, publish events.

@@ -62,7 +62,7 @@ Build contexts in this order: IdentityAccess → CRM → Commercial → Freight 
 ## Folder example (Freight)
 
 ```
-apps/api/src/freight/
+backend/freight/src/            # later slice; mirror backend/core layout
   domain/
     shipment.py                 # aggregate root
     tracking_event.py
@@ -75,10 +75,10 @@ apps/api/src/freight/
     book_shipment.py
     move_shipment.py
     get_shipment.py
-  infrastructure/
-    sqlalchemy_shipment_repository.py
-    shipment_mapper.py
-  interface/
+  database/
+    models/
+    repositories/
+  api/
     shipment_router.py
     shipment_dto.py
 ```

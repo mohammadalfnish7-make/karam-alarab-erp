@@ -21,7 +21,7 @@ Sources: [FastAPI](https://fastapi.tiangolo.com/), [SQLAlchemy](https://docs.sql
 
 Checked snapshot (27 Oct 2026): Python **3.15.2**, FastAPI **0.162.0**, SQLAlchemy **2.1.6**, React **19.3.1**, Vite **8.3.5**, Node **24.22.1 LTS**, PostgreSQL **18.6**. Full table: [versions.md](versions.md).
 
-## Backend (`apps/api`)
+## Backend (`backend/core` first; later slices under `backend/`)
 
 | Choice | Use |
 | --- | --- |
@@ -40,7 +40,7 @@ FastAPI routers are the interface adapter. They must not contain status machines
 
 Do not use Django ORM, SQLModel as the domain model, or Pydantic models as aggregates.
 
-## Frontend (`apps/web`)
+## Frontend (`frontend/`; legacy path `apps/web` if present)
 
 | Choice | Use |
 | --- | --- |
@@ -65,25 +65,21 @@ Signed-in SPA talking to FastAPI over REST. No Next.js. Do not import Python dom
 ## Layout
 
 ```
-apps/api/                  # FastAPI DDD monolith
-  src/
-    shared_kernel/
-    identity_access/
-    crm/
-    commercial/
-    freight/
-    warehouse/
-    trading/
-    finance/
-    audit/
-    main.py
-  alembic/
-apps/web/                  # Vite + React
-  src/
-    routes/
-    components/
-    locales/en.json
-    locales/ru.json
+backend/
+  INDEX.md                 # map of backend slices
+  core/                    # IdentityAccess (login, RBAC, audit) — see core/INDEX.md
+    src/
+      main.py
+      config/              # settings
+      database/            # engine, models/, repositories/, seed
+      domain/              # shared/ + identity/ (no framework imports)
+      application/         # use cases
+      api/                 # routers, DTOs, deps, errors
+      support/             # event bus, logging
+    alembic/
+    tests/
+  # later: crm/, commercial/, freight/, warehouse/, trading/, finance/
+frontend/                  # Vite + React (not in core slice yet)
 ```
 
 ## Explicitly not the stack

@@ -4,7 +4,7 @@ Internal operations platform for **Karam Al Arab**, a Sharjah-based contract log
 
 After this platform ships, warehouse, freight, trading, finance, and support staff run the company in one system: customers, quotes, shipments, stock, invoices, and tracking — with English and Russian from day one.
 
-This repository is the product source of truth. Application code lives in `apps/api` (FastAPI) and `apps/web` (React). Agent skills, Cursor rules, and this README define how we design, build, test, and secure it.
+This repository is the product source of truth. Backend lives under `backend/` (FastAPI); the first slice is `backend/core` (login + open RBAC). Frontend will live under `frontend/`. See [`backend/INDEX.md`](backend/INDEX.md). Agent skills, Cursor rules, and this README define how we design, build, test, and secure it.
 
 ## Company facts (from the live site)
 
@@ -85,8 +85,8 @@ Details: `.cursor/skills/ddd-architecture/`.
 
 ### Stack (decided)
 
-- `apps/api` — latest stable Python, FastAPI, SQLAlchemy 2.x, Alembic, PostgreSQL
-- `apps/web` — latest stable React, TypeScript, Vite, React Router, TanStack Query, Tailwind (Node LTS)
+- `backend/core` — latest stable Python, FastAPI, SQLAlchemy 2.x, Alembic, PostgreSQL
+- `frontend/` — latest stable React, TypeScript, Vite, React Router, TanStack Query, Tailwind (Node LTS) — not in this slice yet
 - Contract — FastAPI OpenAPI; React generates TS types from it
 - Tests — latest stable pytest and Playwright
 - Versions — re-check PyPI/npm before every install; snapshot in `.cursor/skills/tech-stack/versions.md`
@@ -96,7 +96,7 @@ DDD stays if the host changes. Do not add NestJS, Next.js, or Prisma.
 
 ### Sequence
 
-1. DDD skeleton — context folders, shared kernel, IdentityAccess login **(in tree)**
+1. DDD skeleton — shared kernel, IdentityAccess login + open RBAC **(in tree under `backend/core`)** — see [`backend/core/INDEX.md`](backend/core/INDEX.md)
 2. CRM + Commercial — a cosmetics weekly quote can be stored
 3. Freight — air or road shipment status is visible
 4. Warehouse — receive and pick trading SKUs
@@ -107,27 +107,23 @@ Each step must be reversible and demoable on its own.
 
 ### Run locally
 
-Default API database is SQLite (`apps/api/var/karam.db`) so the skeleton can be demoed without Docker. PostgreSQL 18 is the production database; `docker compose up db` then set `DATABASE_URL`.
+Default API database is SQLite (`backend/core/var/karam.db`) so IdentityAccess can be demoed without Docker. PostgreSQL 18 is required when `ENVIRONMENT=production`; `docker compose up db` then set `DATABASE_URL`.
 
 ```bash
-# API
-cd apps/api
+# API (core)
+cd backend/core
 cp .env.example .env
 # Set ENVIRONMENT=development, SEED_ADMIN_PASSWORD (12+ chars), WEB_ORIGIN=http://127.0.0.1:5173
 uv sync
 uv run uvicorn main:app --app-dir src --reload --port 8000
-
-# Web (second terminal)
-cd apps/web
-npm install
-npm run dev
 ```
 
-Open [http://127.0.0.1:5173/en/login](http://127.0.0.1:5173/en/login). Sign in with `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`. Russian: `/ru/login`.
+API health: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health). Login: `POST /sessions` with `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`.
+
+Web UI is not in this slice yet.
 
 ```bash
-cd apps/api && uv run pytest
-cd apps/web && npm run build
+cd backend/core && uv run pytest
 ```
 
 ### Risks

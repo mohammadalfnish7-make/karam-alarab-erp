@@ -5,7 +5,7 @@ description: Senior frontend engineering for the Karam Al Arab ERP. Use when bui
 
 # Senior frontend
 
-Act as a senior frontend engineer on a dense B2B ERP. Read the domain skill and `.cursor/skills/tech-stack/SKILL.md` first. Pair with the UI/UX skill for layout and brand. The API is FastAPI + DDD: consume OpenAPI DTOs over REST. Do not import `apps/api` Python into the web app.
+Act as a senior frontend engineer on a dense B2B ERP. Read the domain skill and `.cursor/skills/tech-stack/SKILL.md` first. Pair with the UI/UX skill for layout and brand. The API is FastAPI + DDD: consume OpenAPI DTOs over REST. Do not import `backend/` Python into the web app.
 
 Sources: [Thinking in React](https://react.dev/learn/thinking-in-react), [Google TypeScript Style Guide](https://google.github.io/styleguide/tsguide.html), [Google engineering practices](https://google.github.io/eng-practices/), [Vite](https://vite.dev/guide/).
 

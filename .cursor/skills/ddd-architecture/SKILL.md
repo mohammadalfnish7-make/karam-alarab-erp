@@ -90,11 +90,11 @@ Only types that are truly shared: `Money` (AED), branded ids (`CustomerId`, `Shi
 ## Layers inside each context
 
 ```
-apps/api/src/freight/
-  domain/           # entities, value objects, domain events, ports (protocols)
-  application/      # commands, queries, handlers
-  infrastructure/   # SQLAlchemy repositories, mappers
-  interface/        # FastAPI routers, Pydantic DTOs
+backend/freight/src/          # example later slice (same shape as backend/core)
+  domain/                     # entities, value objects, domain events, ports
+  application/                # commands, queries, handlers
+  database/                   # SQLAlchemy models + repositories (all DB code here)
+  api/                        # FastAPI routers, Pydantic DTOs
 ```
 
 Dependency direction: `interface → application → domain ← infrastructure`.
