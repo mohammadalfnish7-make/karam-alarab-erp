@@ -1,0 +1,13 @@
+---
+description: Senior QA — manual cases and Playwright
+globs: "{**/*.{spec,test,e2e}.ts,**/playwright/**,**/tests/**}"
+alwaysApply: false
+---
+
+# QA
+
+Read `.cursor/skills/senior-qa/SKILL.md`.
+
+- Test user-visible behavior. Isolated tests. Role/label locators. Web-first assertions.
+- Every critical write path gets a manual case from `manual-test-template.md`.
+- No `waitForTimeout`. No testing third-party sites.

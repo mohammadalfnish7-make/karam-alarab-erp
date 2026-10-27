@@ -1,0 +1,13 @@
+---
+description: Senior cybersecurity — defensive checks only
+globs: "{apps/api,apps/web}/**/*.{ts,tsx}"
+alwaysApply: false
+---
+
+# Cybersecurity
+
+Read `.cursor/skills/senior-cybersecurity/SKILL.md` before shipping auth, payments, files, or public endpoints.
+
+- Target OWASP ASVS 5.0 Level 2 for this ERP.
+- Check object-level authorization on every id (shipments, invoices, stock).
+- Defensive review and hardening only. Do not write exploits, PoCs, or attack scripts.

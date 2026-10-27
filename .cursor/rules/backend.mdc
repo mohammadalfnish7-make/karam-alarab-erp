@@ -1,0 +1,15 @@
+---
+description: Senior backend standards for API, data, and auth
+globs: "{apps/api,packages}/**/*.{ts,prisma,sql}"
+alwaysApply: false
+---
+
+# Backend
+
+Read `.cursor/skills/ddd-architecture/SKILL.md`, `.cursor/skills/senior-backend/SKILL.md`, and `.cursor/skills/senior-cybersecurity/SKILL.md` before editing APIs or schema.
+
+- Put code in a bounded context folder (`freight/`, `crm/`, …), not a global `models/` folder.
+- Thin controllers. Invariants live on the aggregate. One aggregate per transaction.
+- Authorize every object id on the server. Deny by default.
+- Resource URLs use nouns: `/shipments`, not `/create-shipment`.
+- Secrets only from environment variables. Never commit `.env`.

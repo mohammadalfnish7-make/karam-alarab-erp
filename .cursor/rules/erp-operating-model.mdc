@@ -1,0 +1,16 @@
+---
+description: Always-on operating model for the Karam Al Arab ERP
+alwaysApply: true
+---
+
+# Karam Al Arab ERP
+
+Internal logistics and trading ERP for karam-alarab.com. Read `AGENTS.md`, `.cursor/skills/karam-alarab-domain/SKILL.md`, and `.cursor/skills/ddd-architecture/SKILL.md` before any change.
+
+- Architecture is DDD (modular monolith, bounded contexts, small aggregates).
+- English default, Russian in the same release. Prepare RTL, do not ship Arabic yet.
+- Domain words: shipment, cargo, 3PL, FTL, LTL, trading, compensation.
+- Money: decimal AED. Time: store UTC, show Asia/Dubai.
+- Load the senior frontend, backend, UI/UX, QA, or cybersecurity skill that matches the task.
+- Security work is defensive only. No exploit code or attack procedures.
+- Do not reuse leftover “Talal Logistics” copy from the marketing site.

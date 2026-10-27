@@ -1,0 +1,14 @@
+---
+description: DDD is the system architecture for this ERP
+alwaysApply: true
+---
+
+# Architecture is DDD
+
+Read `.cursor/skills/ddd-architecture/SKILL.md` before adding modules, tables, or APIs.
+
+- Modular monolith. One process. Eight bounded contexts. No microservices.
+- One aggregate instance per transaction. Other aggregates by id. Cross-context via events.
+- Domain layer has no Nest, Prisma, or HTTP imports.
+- Transport DTOs and Prisma rows are not the domain model.
+- Business rules live on the aggregate, not only in validators or controllers.

@@ -1,0 +1,14 @@
+---
+description: Senior UI/UX for dense logistics workflows
+globs: "{apps/web}/**/*.{tsx,css}"
+alwaysApply: false
+---
+
+# UI / UX
+
+Read `.cursor/skills/senior-ui-ux/SKILL.md` and `brand.md` in that skill.
+
+- Dense ops layouts, not the marketing homepage.
+- Brand primary `#1769FF`, text `#212529`, font Montserrat.
+- WCAG 2.2 AA. Visible focus. Status always on screen for shipments and stock.
+- Confirm destructive or money actions. Offer cancel and undo where state allows.

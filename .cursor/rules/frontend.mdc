@@ -1,0 +1,13 @@
+---
+description: Senior frontend standards for ERP UI code
+globs: "{apps/web,packages}/**/*.{ts,tsx,css}"
+alwaysApply: false
+---
+
+# Frontend
+
+Read `.cursor/skills/senior-frontend/SKILL.md` and `.cursor/skills/senior-ui-ux/SKILL.md` before editing UI.
+
+- TypeScript strict. No `any`. Derive state; do not duplicate server data in `useState`.
+- User-facing locators: roles, labels, names. No CSS-class tests.
+- Verify the changed flow in the browser before claiming done.
