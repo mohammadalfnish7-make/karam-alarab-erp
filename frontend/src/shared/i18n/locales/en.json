@@ -6,6 +6,10 @@
   "nav": {
     "home": "Home",
     "admin": "Admin",
+    "users": "Users",
+    "roles": "Roles",
+    "account": "Account",
+    "password": "Password",
     "language": "Language"
   },
   "auth": {
@@ -25,7 +29,8 @@
     "logout": "Sign out",
     "forbidden": {
       "title": "You do not have access",
-      "body": "Ask an admin if you need this screen."
+      "body": "Ask an admin if you need this screen.",
+      "goHome": "Go to home"
     },
     "session": {
       "signedInAs": "Signed in as {{email}}"
@@ -34,11 +39,107 @@
   "shell": {
     "home": {
       "title": "Operations workspace",
-      "body": "You are signed in. Freight and warehouse screens will appear here next."
+      "body": "You are signed in. Use Admin to manage users when you have access."
     },
     "loading": "Loading…"
   },
   "common": {
-    "retry": "Try again"
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "save": "Save",
+    "prev": "Previous",
+    "next": "Next",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "identity": {
+    "roleLabels": {
+      "admin": "Admin",
+      "operations": "Operations",
+      "warehouse": "Warehouse",
+      "support": "Support",
+      "sales": "Sales"
+    },
+    "roleDescriptions": {
+      "admin": "Full access including users and roles.",
+      "operations": "Shipments, tracking, exceptions, and work tasks.",
+      "warehouse": "Receive, put-away, pick, and stock work.",
+      "support": "Read shipment and work status for 24/7 answers.",
+      "sales": "Limited work visibility for commercial follow-up."
+    },
+    "users": {
+      "title": "Users",
+      "subtitle": "Create staff accounts and assign roles.",
+      "create": "Create user",
+      "createTitle": "Create user",
+      "edit": "Edit",
+      "editTitle": "Edit user",
+      "search": "Search",
+      "searchPlaceholder": "Search by email…",
+      "showInactive": "Show inactive users",
+      "colEmail": "Email",
+      "colRoles": "Roles",
+      "colStatus": "Status",
+      "colActions": "Actions",
+      "active": "Active",
+      "inactive": "Inactive",
+      "email": "Email",
+      "tempPassword": "Temporary password",
+      "passwordHint": "Minimum 12 characters. Share it securely; the user can change it later.",
+      "roles": "Roles",
+      "accountStatus": "Account active",
+      "showing": "Showing {{from}}–{{to}} of {{total}} users",
+      "emptyTitle": "No users yet",
+      "emptyBody": "Create the first staff account to get started.",
+      "loadError": "Could not load users. Try again.",
+      "saveFailed": "Could not save the user.",
+      "saving": "Saving…",
+      "emailRequired": "Enter an email.",
+      "emailInvalid": "Enter a valid email address.",
+      "emailExists": "A user with this email already exists.",
+      "passwordRequired": "Enter a temporary password.",
+      "passwordTooShort": "Password must be at least 12 characters.",
+      "rolesRequired": "Select at least one role.",
+      "lastAdmin": "Cannot deactivate or demote the last admin."
+    },
+    "roles": {
+      "title": "Roles",
+      "subtitle": "Review role grants and replace permissions when needed.",
+      "colName": "Role",
+      "colSuperuser": "Superuser",
+      "colCount": "Permissions",
+      "colDescription": "Description",
+      "editPermissions": "Edit permissions",
+      "editTitle": "Permissions — {{role}}",
+      "registerPermission": "Register permission",
+      "addPermission": "Add permission",
+      "registerHint": "Advanced. Use resource:action (lowercase).",
+      "permissionName": "Permission name",
+      "permissionRequired": "Enter a permission name.",
+      "permissionInvalid": "Use the form resource:action (letters, numbers, underscore).",
+      "confirmTitle": "Replace role permissions?",
+      "confirmBody": "This replaces every permission grant for {{role}}.",
+      "confirmAction": "Replace permissions",
+      "superuserHint": "Superuser roles bypass explicit grants. Listed permissions are optional extras.",
+      "loadError": "Could not load roles. Try again.",
+      "saveFailed": "Could not save permissions."
+    },
+    "password": {
+      "title": "Change password",
+      "subtitle": "Update the password for your account.",
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Confirm new password",
+      "hint": "Minimum 12 characters.",
+      "submit": "Update password",
+      "saving": "Updating…",
+      "sessionNote": "Changing your password signs you out of every session, including this one. You will sign in again with the new password.",
+      "currentRequired": "Enter your current password.",
+      "newRequired": "Enter a new password.",
+      "newTooShort": "Password must be at least 12 characters.",
+      "confirmMismatch": "New password and confirmation do not match.",
+      "currentWrong": "Current password is incorrect.",
+      "failed": "Could not update the password."
+    }
   }
 }

@@ -3,12 +3,15 @@ import type { InputHTMLAttributes } from 'react'
 interface TextFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string
   error?: string
+  /** Hide the label visually. The input stays named for assistive tech. */
+  compact?: boolean
 }
 
 export function TextField({
   id,
   label,
   error,
+  compact = false,
   className = '',
   ...props
 }: TextFieldProps) {
@@ -17,7 +20,14 @@ export function TextField({
 
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
-      <label htmlFor={fieldId} className="text-sm font-medium text-[var(--color-text)]">
+      <label
+        htmlFor={fieldId}
+        className={
+          compact
+            ? 'sr-only'
+            : 'text-sm font-medium text-[var(--color-text)]'
+        }
+      >
         {label}
       </label>
       <input

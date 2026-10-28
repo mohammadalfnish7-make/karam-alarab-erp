@@ -1,30 +1,47 @@
+import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
-import { Permissions, RequirePermission, useSession } from '@/features/auth'
+import { Permissions, hasPermission, useSession } from '@/features/auth'
+import { resolveLocale } from '@/shared/config/env'
+import { PageFrame } from '@/shared/ui/PageFrame'
 
 export function HomePage() {
   const { t } = useTranslation()
   const { me } = useSession()
+  const { locale: localeParam } = useParams()
+  const locale = resolveLocale(localeParam)
+  const canAdmin = hasPermission(me, Permissions.identityRead)
+
+  const modules = [
+    canAdmin
+      ? { to: `/${locale}/admin/users`, title: t('nav.users'), body: t('identity.users.subtitle') }
+      : null,
+    canAdmin
+      ? { to: `/${locale}/admin/roles`, title: t('nav.roles'), body: t('identity.roles.subtitle') }
+      : null,
+    { to: `/${locale}/account/password`, title: t('nav.password'), body: t('identity.password.subtitle') },
+  ].filter((item): item is { to: string; title: string; body: string } => item !== null)
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-10">
-      <h1 className="text-2xl font-semibold text-[var(--color-text)]">
-        {t('shell.home.title')}
-      </h1>
-      <p className="mt-2 text-sm text-[var(--color-muted)]">{t('shell.home.body')}</p>
+    <PageFrame title={t('shell.home.title')} subtitle={t('shell.home.body')}>
       {me ? (
-        <p className="mt-6 text-sm text-[var(--color-text)]" role="status">
+        <p className="mb-4 text-sm text-[var(--color-text)]" role="status">
           {t('auth.session.signedInAs', { email: me.email })}
         </p>
       ) : null}
-
-      <div className="mt-8">
-        <RequirePermission permission={Permissions.identityRead} hide>
-          <p className="text-sm font-medium text-[var(--color-primary)]">
-            {t('nav.admin')}
-          </p>
-        </RequirePermission>
-      </div>
-    </div>
+      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {modules.map((item) => (
+          <li key={item.to}>
+            <Link
+              to={item.to}
+              className="block h-full rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 hover:border-[var(--color-primary)]"
+            >
+              <span className="text-sm font-semibold text-[var(--color-text)]">{item.title}</span>
+              <span className="mt-1 block text-xs text-[var(--color-muted)]">{item.body}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </PageFrame>
   )
 }

@@ -69,7 +69,7 @@ export function LoginPage() {
   const otherLocale: AppLocale = locale === 'en' ? 'ru' : 'en'
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[var(--color-wash)]">
+    <div className="flex min-h-dvh flex-col bg-[var(--color-canvas)]">
       <header className="flex items-center justify-between px-6 py-4">
         <p className="text-lg font-semibold tracking-tight text-[var(--color-text)]">
           {t('brand.name')}{' '}
@@ -89,12 +89,13 @@ export function LoginPage() {
       </header>
 
       <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 pb-16">
+        <div className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
         <h1 className="text-2xl font-semibold text-[var(--color-text)]">
           {t('auth.login.title')}
         </h1>
         <p className="mt-2 text-sm text-[var(--color-muted)]">{t('auth.login.subtitle')}</p>
 
-        <form className="mt-8 flex flex-col gap-4" onSubmit={(e) => void onSubmit(e)} noValidate>
+        <form className="mt-6 flex flex-col gap-4" onSubmit={(e) => void onSubmit(e)} noValidate>
           <TextField
             name="email"
             type="email"
@@ -126,6 +127,7 @@ export function LoginPage() {
             {login.isPending ? t('auth.login.submitting') : t('auth.login.submit')}
           </Button>
         </form>
+        </div>
       </main>
     </div>
   )

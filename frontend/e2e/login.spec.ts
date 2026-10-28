@@ -1,11 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-/**
- * Requires API on :8000 with seeded admin.
- * Set E2E_ADMIN_EMAIL / E2E_ADMIN_PASSWORD or defaults match backend .env.example email.
- */
-const email = process.env.E2E_ADMIN_EMAIL ?? 'admin@karam-alarab.com'
-const password = process.env.E2E_ADMIN_PASSWORD ?? ''
+import { adminEmail, adminPassword, loginAs } from './helpers'
 
 test.describe('login', () => {
   test('shows English login form', async ({ page }) => {
@@ -28,12 +23,8 @@ test.describe('login', () => {
   })
 
   test('signs in with seed admin when password is configured', async ({ page }) => {
-    test.skip(!password, 'Set E2E_ADMIN_PASSWORD to run against a live API')
-    await page.goto('/en/login')
-    await page.getByLabel('Email').fill(email)
-    await page.getByLabel('Password').fill(password)
-    await page.getByRole('button', { name: 'Sign in' }).click()
-    await expect(page.getByRole('heading', { name: 'Operations workspace' })).toBeVisible()
-    await expect(page.getByText(new RegExp(email, 'i'))).toBeVisible()
+    test.skip(!adminPassword, 'Set E2E_ADMIN_PASSWORD to run against a live API')
+    await loginAs(page, adminEmail, adminPassword)
+    await expect(page.getByRole('status')).toContainText(adminEmail)
   })
 })

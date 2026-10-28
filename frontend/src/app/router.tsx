@@ -2,6 +2,9 @@ import { Navigate, Route, Routes, useParams } from 'react-router'
 
 import { LocaleLayout } from '@/app/LocaleLayout'
 import { RequireAuth } from '@/features/auth'
+import { ChangePasswordPage } from '@/pages/account/ChangePasswordPage'
+import { RolesPage } from '@/pages/admin/RolesPage'
+import { UsersPage } from '@/pages/admin/UsersPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { AppShell } from '@/pages/shell/AppShell'
 import { HomePage } from '@/pages/shell/HomePage'
@@ -21,6 +24,9 @@ export function AppRouter() {
         <Route element={<ProtectedLocaleRoutes />}>
           <Route element={<AppShell />}>
             <Route index element={<HomePage />} />
+            <Route path="admin/users" element={<UsersPage />} />
+            <Route path="admin/roles" element={<RolesPage />} />
+            <Route path="account/password" element={<ChangePasswordPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to=".." replace />} />

@@ -1,8 +1,11 @@
 import type { ReactNode } from 'react'
+import { useNavigate, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 
 import { hasPermission } from '@/features/auth/permissions'
 import { useSession } from '@/features/auth/use-session'
+import { resolveLocale } from '@/shared/config/env'
+import { Button } from '@/shared/ui/Button'
 
 interface RequirePermissionProps {
   permission: string
@@ -19,6 +22,9 @@ export function RequirePermission({
 }: RequirePermissionProps) {
   const { me, isLoading } = useSession()
   const { t } = useTranslation()
+  const { locale: localeParam } = useParams()
+  const locale = resolveLocale(localeParam)
+  const navigate = useNavigate()
 
   if (isLoading) {
     return null
@@ -31,10 +37,15 @@ export function RequirePermission({
     return (
       <div
         role="status"
-        className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-sm text-[var(--color-text)]"
+        className="mx-auto mt-16 flex max-w-md flex-col items-center px-6 text-center"
       >
-        <p className="font-semibold">{t('auth.forbidden.title')}</p>
-        <p className="mt-1 text-[var(--color-muted)]">{t('auth.forbidden.body')}</p>
+        <p className="text-lg font-semibold text-[var(--color-text)]">
+          {t('auth.forbidden.title')}
+        </p>
+        <p className="mt-2 text-sm text-[var(--color-muted)]">{t('auth.forbidden.body')}</p>
+        <Button className="mt-6" variant="secondary" onClick={() => void navigate(`/${locale}`)}>
+          {t('auth.forbidden.goHome')}
+        </Button>
       </div>
     )
   }
