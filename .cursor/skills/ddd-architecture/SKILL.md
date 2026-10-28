@@ -101,6 +101,10 @@ Never put the status machine or money rules only on the Pydantic DTO.
 - Shared “generic repository” over all tables
 - Database foreign keys between contexts
 
+## ProcessTrace (core, all contexts)
+
+Readable mid-process journeys live in core (`TraceRecorder`, `core_process_traces`). WorkManagement is the first adopter. When Freight/Warehouse add async or multi-stage flows, call the same `TraceRecorder` with stage-boundary steps and a stable `correlation_id` — do not add per-context trace tables. See [contexts.md](contexts.md).
+
 ## Done
 
 - New code sits in one context folder above

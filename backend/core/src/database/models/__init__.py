@@ -10,6 +10,7 @@ from database.models.identity import (
     UserRoleRow,
     UserRow,
 )
+from database.models.trace import ProcessTraceRow, ProcessTraceStepRow
 from database.models.work import (
     NotificationChannelRow,
     NotificationRow,
@@ -32,6 +33,8 @@ __all__ = [
     "NotificationChannelRow",
     "NotificationRow",
     "PermissionRow",
+    "ProcessTraceRow",
+    "ProcessTraceStepRow",
     "RolePermissionRow",
     "RoleRow",
     "SessionRow",

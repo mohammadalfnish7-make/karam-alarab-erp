@@ -23,7 +23,20 @@ class JsonFormatter(logging.Formatter):
         }
         if record.exc_info:
             payload["exc_info"] = self.formatException(record.exc_info)
-        for key in ("actor", "action", "entity", "event_type", "event_id"):
+        for key in (
+            "actor",
+            "action",
+            "entity",
+            "event_type",
+            "event_id",
+            "correlation_id",
+            "trace_id",
+            "context",
+            "operation",
+            "step_key",
+            "status",
+            "request_id",
+        ):
             if hasattr(record, key):
                 payload[key] = getattr(record, key)
         return json.dumps(payload, default=str)

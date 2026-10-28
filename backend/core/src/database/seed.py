@@ -28,6 +28,7 @@ SEED_PERMISSIONS = (
     "work:transition",
     "work:attach",
     "work:admin",
+    "process:read",
 )
 
 

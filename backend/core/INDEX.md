@@ -12,8 +12,9 @@ Everything for login/RBAC and the open task engine lives under `backend/core`.
 | [`src/domain/identity/`](src/domain/identity/) | User aggregate, permissions | Last-admin, role rules |
 | [`src/domain/work/`](src/domain/work/) | Task engine + webhook signing/SSRF rules | Task invariants, notify crypto |
 | [`src/application/`](src/application/) | Use cases / notify listener / delivery worker | Login, tasks, channels, fan-out |
+| [`src/support/tracing.py`](src/support/tracing.py) | **Core ProcessTrace** recorder (all contexts) | Mid-process failures, correlation |
 | [`src/api/`](src/api/) | HTTP routers + DTOs | Status codes, routes |
-| [`alembic/`](alembic/) | Migrations (`0001` identity, `0002` work) | Schema history |
+| [`alembic/`](alembic/) | Migrations (`0001` identity, `0002` work, `0003` traces) | Schema history |
 | [`tests/`](tests/) | Pytest | Regressions |
 
 ## HTTP surface
@@ -38,8 +39,19 @@ Everything for login/RBAC and the open task engine lives under `backend/core`.
 | POST/PATCH | `/tasks/{id}/transitions`, `/assignee`, `/steps`, `/comments`, `/attachments`, `/entity-links`, `/links` |
 | POST/GET/PATCH/DELETE | `/notification-channels` (+ `/roll-secret`) |
 | GET/POST | `/notifications`, `/unread-count`, `/{id}/read`, `/read-all` |
+| POST | `/work/process-deliveries` (dev/test only) |
 
-Task types and channels start **empty** — admin creates them. Assign enqueues inbox + webhook deliveries; run `process_pending_deliveries` (worker) to POST.
+### Process traces (core, all contexts)
+
+| Method | Path |
+| --- | --- |
+| GET | `/process-traces` |
+| GET | `/process-traces/{id}` |
+| GET | `/process-traces/by-correlation/{correlationId}` |
+
+Permission: `process:read`. Future Freight/Warehouse call the same `TraceRecorder` — do not add per-module trace tables.
+
+Task types and channels start **empty** — admin creates them. Assign enqueues inbox + webhook deliveries; `POST /work/process-deliveries` (or `process_pending_deliveries`) POSTs webhooks.
 
 ## Run
 

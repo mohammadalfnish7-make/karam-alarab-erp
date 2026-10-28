@@ -3,10 +3,12 @@ from __future__ import annotations
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Query, Request, UploadFile
 from fastapi.responses import Response as FastAPIResponse
 
 from api.deps import get_work_service, require_permission
+from application.delivery_worker import process_pending_deliveries
+from domain.shared.domain_error import ForbiddenError
 from api.work_dto import (
     AddCommentRequest,
     AddEntityLinkRequest,
@@ -363,3 +365,21 @@ def add_task_link(
         }
         for l in links
     ]
+
+
+@router.post("/work/process-deliveries")
+def process_work_deliveries(
+    request: Request,
+    _: Annotated[Actor, Depends(require_permission("work:admin"))],
+) -> dict[str, int]:
+    """Dev/test only: pump pending webhook deliveries once."""
+    settings = request.app.state.settings
+    if settings.is_production:
+        raise ForbiddenError(
+            "Delivery processing is not exposed over HTTP in production."
+        )
+    processed = process_pending_deliveries(
+        request.app.state.session_factory,
+        trace_recorder=getattr(request.app.state, "trace_recorder", None),
+    )
+    return {"processed": processed}

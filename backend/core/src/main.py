@@ -14,6 +14,7 @@ from api.channel_router import router as channel_router
 from api.errors import register_exception_handlers
 from api.notification_router import router as notification_router
 from api.session_router import router as session_router
+from api.trace_router import router as trace_router
 from api.user_router import router as user_router
 from api.work_router import router as work_router
 from application.audit_listener import AuditListener
@@ -31,6 +32,7 @@ from domain.identity.events import (
 from domain.work.events import TaskAssigned
 from support.events import EventBus
 from support.logging import configure_logging, request_id_var
+from support.tracing import TraceRecorder
 
 
 class RequestIdMiddleware(BaseHTTPMiddleware):
@@ -59,8 +61,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     engine = create_db_engine(settings)
     session_factory = create_session_factory(engine)
     event_bus = EventBus()
+    trace_recorder = TraceRecorder(session_factory)
+    event_bus.set_trace_recorder(trace_recorder)
     audit_listener = AuditListener(session_factory)
-    notify_listener = NotifyListener(session_factory, settings)
+    notify_listener = NotifyListener(session_factory, settings, trace_recorder)
     for event_type in (
         UserRegistered,
         UserDeactivated,
@@ -88,6 +92,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.event_bus = event_bus
         app.state.settings = settings
         app.state.upload_dir = upload_dir
+        app.state.trace_recorder = trace_recorder
         yield
         engine.dispose()
 
@@ -97,6 +102,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.event_bus = event_bus
     app.state.settings = settings
     app.state.upload_dir = upload_dir
+    app.state.trace_recorder = trace_recorder
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[settings.web_origin],
@@ -111,6 +117,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(work_router)
     app.include_router(channel_router)
     app.include_router(notification_router)
+    app.include_router(trace_router)
 
     @app.get("/health")
     def health() -> dict[str, str]:

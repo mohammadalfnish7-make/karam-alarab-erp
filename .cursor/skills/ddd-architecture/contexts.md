@@ -38,3 +38,9 @@ Removed from this product cut: CRM, Commercial, Trading, Finance.
 ## Audit
 
 - Append-only **AuditEntry** from integration events. No business invariants besides immutability.
+
+## Core ProcessTrace (cross-cutting)
+
+- Shared `TraceRecorder` + `core_process_traces` / `core_process_trace_steps` in `backend/core`.
+- After-commit fan-out and event handlers should `start` / `step` / `succeed|fail|partial` with a stable `correlation_id` (usually domain `event_id`) and `request_id`.
+- Query via `GET /process-traces` (`process:read`). Do not invent per-context trace tables for Freight/Warehouse.

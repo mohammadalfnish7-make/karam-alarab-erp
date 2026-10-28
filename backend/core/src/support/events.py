@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from typing import TypeVar
+from typing import TYPE_CHECKING, TypeVar
 
 from domain.shared.domain_event import DomainEvent
+
+if TYPE_CHECKING:
+    from support.tracing import TraceRecorder
 
 logger = logging.getLogger(__name__)
 
@@ -15,9 +18,14 @@ EventHandler = Callable[[DomainEvent], None]
 class EventBus:
     """In-process publish/subscribe. Handler failures are logged, not re-raised."""
 
-    def __init__(self) -> None:
-        """Start with an empty handler map."""
+    def __init__(self, trace_recorder: TraceRecorder | None = None) -> None:
+        """Start with an empty handler map; optional TraceRecorder for failures."""
         self._handlers: dict[type[DomainEvent], list[EventHandler]] = {}
+        self._trace_recorder = trace_recorder
+
+    def set_trace_recorder(self, trace_recorder: TraceRecorder) -> None:
+        """Attach a TraceRecorder after construction (avoids circular wiring)."""
+        self._trace_recorder = trace_recorder
 
     def subscribe(self, event_type: type[E], handler: Callable[[E], None]) -> None:
         """Register a handler for one event type."""
@@ -28,11 +36,25 @@ class EventBus:
         for handler in self._handlers.get(type(event), []):
             try:
                 handler(event)
-            except Exception:
+            except Exception as exc:
                 logger.exception(
                     "event_handler_failed",
-                    extra={"event_type": type(event).__name__, "event_id": str(event.event_id)},
+                    extra={
+                        "event_type": type(event).__name__,
+                        "event_id": str(event.event_id),
+                        "correlation_id": str(event.event_id),
+                    },
                 )
+                if self._trace_recorder is not None:
+                    try:
+                        self._trace_recorder.record_handler_failure(
+                            event_type=type(event).__name__,
+                            event_id=str(event.event_id),
+                            error_message=f"{type(exc).__name__}: {exc}",
+                            entity_id=getattr(event, "aggregate_id", "") or "",
+                        )
+                    except Exception:
+                        logger.exception("event_handler_trace_failed")
 
     def publish_all(self, events: list[DomainEvent]) -> None:
         """Publish a list of events in order."""
