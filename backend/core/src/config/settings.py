@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     database_url: str = _DEFAULT_SQLITE
     seed_admin_email: str = "admin@karam-alarab.com"
     seed_admin_password: str = ""
+    seed_ops_email: str = "ops@karam-alarab.com"
+    seed_ops_password: str = ""
     web_origin: str = "http://127.0.0.1:5173"
     session_cookie_name: str = "karam_session"
     session_ttl_seconds: int = 28_800
@@ -59,6 +61,10 @@ class Settings(BaseSettings):
                 raise RuntimeError(
                     "SEED_ADMIN_PASSWORD must be set and at least 12 characters "
                     "in development/test."
+                )
+            if self.seed_ops_password and len(self.seed_ops_password) < 12:
+                raise RuntimeError(
+                    "SEED_OPS_PASSWORD must be at least 12 characters when set."
                 )
 
 

@@ -86,8 +86,8 @@ Details: `.cursor/skills/ddd-architecture/`.
 ### Stack (decided)
 
 - `backend/core` — platform (IdentityAccess, Audit, ProcessTrace); `backend/work` — tasks; `backend/notify` — inbox/webhooks; FastAPI, SQLAlchemy 2.x, Alembic, PostgreSQL
-- `frontend/` — latest stable React, TypeScript, Vite, React Router, TanStack Query, Tailwind (Node LTS) — not in this slice yet
-- Contract — FastAPI OpenAPI; React generates TS types from it
+- `frontend/` — latest stable React, TypeScript, Vite, React Router, TanStack Query, Tailwind (Node LTS) — login + session shell
+- Contract — FastAPI OpenAPI; React generates TS types from it (`npm run gen:api`)
 - Tests — latest stable pytest and Playwright
 - Versions — re-check PyPI/npm before every install; snapshot in `.cursor/skills/tech-stack/versions.md`
 - Deploy later as a Python API + static React (confirm host before first production push)
@@ -97,16 +97,29 @@ DDD stays if the host changes. Do not add NestJS, Next.js, or Prisma.
 ### Sequence
 
 1. DDD skeleton — IdentityAccess login + open RBAC **(done under `backend/core`)** — see [`backend/core/INDEX.md`](backend/core/INDEX.md)
-2. WorkManagement + Notifications — tasks under [`backend/work`](backend/work/INDEX.md); inbox/webhooks under [`backend/notify`](backend/notify/INDEX.md)
-3. Freight — air or road shipment status is visible
-4. Warehouse — receive and pick stock
-5. i18n RU parity and Playwright critical paths on CI (with frontend)
+2. Frontend login + session shell **(in progress under `frontend/`)** — EN/RU, cookie auth, permission gates
+3. WorkManagement + Notifications — tasks under [`backend/work`](backend/work/INDEX.md); inbox/webhooks under [`backend/notify`](backend/notify/INDEX.md)
+4. Freight — air or road shipment status is visible
+5. Warehouse — receive and pick stock
+6. Playwright critical paths on CI
 
 Each step must be reversible and demoable on its own.
 
 ### Run locally
 
 Default API database is SQLite (`backend/core/var/karam.db`) so IdentityAccess can be demoed without Docker. PostgreSQL 18 is required when `ENVIRONMENT=production`; `docker compose up db` then set `DATABASE_URL`.
+
+**Docker (recommended for a server)** — Postgres + API + nginx SPA, one origin:
+
+```bash
+cp .env.example .env
+# Set SEED_ADMIN_PASSWORD (12+ chars). WEB_ORIGIN must match the URL you open.
+docker compose up --build -d
+```
+
+Login: [http://127.0.0.1:8080/en/login](http://127.0.0.1:8080/en/login). Details: [`docker/README.md`](docker/README.md).
+
+**Local without Docker**
 
 ```bash
 # API (core)
@@ -115,17 +128,22 @@ cp .env.example .env
 # Set ENVIRONMENT=development, SEED_ADMIN_PASSWORD (12+ chars), WEB_ORIGIN=http://127.0.0.1:5173
 uv sync
 uv run uvicorn main:app --app-dir src --reload --port 8000
+
+# Web (separate terminal)
+cd frontend
+npm install
+npm run dev
 ```
 
-API health: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health). Login: `POST /sessions` with `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`.
-
-Web UI is not in this slice yet.
+API health: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health).  
+Web login: [http://127.0.0.1:5173/en/login](http://127.0.0.1:5173/en/login) (Russian: `/ru/login`). Use `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD`.
 
 ```bash
 cd backend/core && uv run pytest
 # Migrations (host-level; DB is a Clean Architecture detail):
 cd backend/core && uv run alembic -c ../alembic.ini upgrade head
 ```
+
 
 ### Risks
 

@@ -3,17 +3,57 @@ services:
     image: postgres:18
     environment:
       POSTGRES_USER: karam
-      POSTGRES_PASSWORD: karam
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-karam}
       POSTGRES_DB: karam
-    ports:
-      - "5432:5432"
     volumes:
-      - karam_pg:/var/lib/postgresql/data
+      # Postgres 18+ images expect the mount at /var/lib/postgresql (not .../data).
+      - karam_pg:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U karam -d karam"]
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      DATABASE_URL: postgresql+psycopg://karam:${POSTGRES_PASSWORD:-karam}@db:5432/karam
+      # Browser origin that opens the SPA (nginx on :8080 by default).
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://127.0.0.1:8080}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@karam-alarab.com}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:?Set SEED_ADMIN_PASSWORD in .env (12+ chars)}
+      SEED_OPS_EMAIL: ${SEED_OPS_EMAIL:-ops@karam-alarab.com}
+      SEED_OPS_PASSWORD: ${SEED_OPS_PASSWORD:-}
+      SESSION_COOKIE_NAME: ${SESSION_COOKIE_NAME:-karam_session}
+      SESSION_TTL_SECONDS: ${SESSION_TTL_SECONDS:-28800}
+      UPLOAD_DIR: /app/core/var/uploads
+    volumes:
+      - karam_uploads:/app/core/var/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    # Not published by default — reach the API through nginx `/api`.
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   karam_pg:
+  karam_uploads:

@@ -1,0 +1,10 @@
+/** Public surface of the auth feature. Pages import from here only. */
+export { authApi } from '@/features/auth/api'
+export { Permissions, hasAnyPermission, hasPermission } from '@/features/auth/permissions'
+export { RequireAuth } from '@/features/auth/RequireAuth'
+export { RequirePermission } from '@/features/auth/RequirePermission'
+export { sessionKeys } from '@/features/auth/session-keys'
+export { useLogin } from '@/features/auth/use-login'
+export { useLogout } from '@/features/auth/use-logout'
+export { useSession } from '@/features/auth/use-session'
+export type { SessionState } from '@/features/auth/use-session'

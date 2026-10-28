@@ -1,0 +1,16 @@
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/.venv
+**/var
+**/*.egg-info
+**/.env
+**/.env.*
+!**/.env.example
+**/htmlcov
+**/.DS_Store
+**/tests
+**/*.md
+!core/README.md

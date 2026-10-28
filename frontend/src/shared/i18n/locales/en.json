@@ -1,0 +1,44 @@
+{
+  "brand": {
+    "name": "Karam Al Arab",
+    "product": "ERP"
+  },
+  "nav": {
+    "home": "Home",
+    "admin": "Admin",
+    "language": "Language"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Use your work email to open the operations workspace.",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "failed": "Email or password is incorrect.",
+      "rateLimited": "Too many attempts. Wait a moment and try again.",
+      "emailRequired": "Enter your email.",
+      "emailInvalid": "Enter a valid email address.",
+      "passwordRequired": "Enter your password."
+    },
+    "logout": "Sign out",
+    "forbidden": {
+      "title": "You do not have access",
+      "body": "Ask an admin if you need this screen."
+    },
+    "session": {
+      "signedInAs": "Signed in as {{email}}"
+    }
+  },
+  "shell": {
+    "home": {
+      "title": "Operations workspace",
+      "body": "You are signed in. Freight and warehouse screens will appear here next."
+    },
+    "loading": "Loading…"
+  },
+  "common": {
+    "retry": "Try again"
+  }
+}

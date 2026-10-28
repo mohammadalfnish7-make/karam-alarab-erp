@@ -31,9 +31,75 @@ SEED_PERMISSIONS = (
     "process:read",
 )
 
+# Default grants per role (admin gets every permission separately as superuser + links).
+SEED_ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
+    "operations": (
+        "work:read",
+        "work:create",
+        "work:update",
+        "work:transition",
+        "work:attach",
+        "process:read",
+    ),
+    "warehouse": (
+        "work:read",
+        "work:update",
+        "work:transition",
+        "work:attach",
+        "process:read",
+    ),
+    "support": (
+        "work:read",
+        "process:read",
+    ),
+    "sales": (
+        "work:read",
+        "process:read",
+    ),
+}
+
+
+def _ensure_role_permissions(session: Session, role_name: str, permission_names: tuple[str, ...]) -> None:
+    """Idempotently grant the listed permissions to a role."""
+    role = session.scalar(select(RoleRow).where(RoleRow.name == role_name))
+    assert role is not None
+    for perm_name in permission_names:
+        perm = session.scalar(select(PermissionRow).where(PermissionRow.name == perm_name))
+        assert perm is not None
+        link = session.scalar(
+            select(RolePermissionRow).where(
+                RolePermissionRow.role_id == role.id,
+                RolePermissionRow.permission_id == perm.id,
+            )
+        )
+        if link is None:
+            session.add(RolePermissionRow(role_id=role.id, permission_id=perm.id))
+
+
+def _ensure_user(
+    users: SqlAlchemyUserRepository,
+    *,
+    email: str,
+    password: str,
+    roles: set[str],
+) -> None:
+    """Create the user when missing; never overwrite an existing account."""
+    if not email.strip() or len(password) < 12:
+        return
+    if users.get_by_email(email.strip().lower()) is not None:
+        return
+    hasher = Argon2PasswordHasher()
+    user = User.register(
+        email=email,
+        password_hash=hasher.hash(password),
+        role_names=roles,
+        now=datetime.now(UTC),
+    )
+    users.save(user)
+
 
 def seed_identity_access(session: Session, settings: Settings) -> None:
-    """Ensure roles, core permissions, and the seed admin user exist."""
+    """Ensure roles, core permissions, and seed users exist."""
     for name, is_superuser in SEED_ROLES:
         existing = session.scalar(select(RoleRow).where(RoleRow.name == name))
         if existing is None:
@@ -60,17 +126,22 @@ def seed_identity_access(session: Session, settings: Settings) -> None:
         )
         if link is None:
             session.add(RolePermissionRow(role_id=admin.id, permission_id=perm.id))
+
+    for role_name, perms in SEED_ROLE_PERMISSIONS.items():
+        _ensure_role_permissions(session, role_name, perms)
     session.flush()
 
     users = SqlAlchemyUserRepository(session)
-    if users.get_by_email(settings.seed_admin_email.strip().lower()) is None:
-        hasher = Argon2PasswordHasher()
-        now = datetime.now(UTC)
-        admin_user = User.register(
-            email=settings.seed_admin_email,
-            password_hash=hasher.hash(settings.seed_admin_password),
-            role_names={"admin"},
-            now=now,
-        )
-        users.save(admin_user)
+    _ensure_user(
+        users,
+        email=settings.seed_admin_email,
+        password=settings.seed_admin_password,
+        roles={"admin"},
+    )
+    _ensure_user(
+        users,
+        email=settings.seed_ops_email,
+        password=settings.seed_ops_password,
+        roles={"operations"},
+    )
     session.commit()

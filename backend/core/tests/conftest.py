@@ -10,6 +10,8 @@ from fastapi.testclient import TestClient
 os.environ["ENVIRONMENT"] = "test"
 os.environ["SEED_ADMIN_EMAIL"] = "admin@karam-alarab.com"
 os.environ["SEED_ADMIN_PASSWORD"] = "test-admin-password-123"
+os.environ["SEED_OPS_EMAIL"] = "ops@karam-alarab.com"
+os.environ["SEED_OPS_PASSWORD"] = "test-ops-password-123"
 os.environ["WEB_ORIGIN"] = "http://testserver"
 
 from helpers import ADMIN_EMAIL, ADMIN_PASSWORD
@@ -30,6 +32,8 @@ def settings(db_path: Path) -> Settings:
         database_url=f"sqlite:///{db_path}",
         seed_admin_email=ADMIN_EMAIL,
         seed_admin_password=ADMIN_PASSWORD,
+        seed_ops_email="ops@karam-alarab.com",
+        seed_ops_password="test-ops-password-123",
         web_origin="http://testserver",
         session_cookie_name="karam_session",
         session_ttl_seconds=28800,
