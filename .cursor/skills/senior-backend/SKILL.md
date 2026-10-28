@@ -64,7 +64,7 @@ Later bounded contexts add folders under `backend/` (e.g. `backend/freight/`). I
 - Backing services (Postgres, SMTP, object storage) are swappable by URL.
 - Logs as structured JSON to stdout. Request id on every line.
 - Processes are stateless. Uploads go to object storage, not the local disk of a web node.
-- Admin tasks are one-off commands (`alembic upgrade head`), not hidden HTTP routes.
+- Admin tasks are one-off commands (`cd backend/core && uv run alembic -c ../alembic.ini upgrade head`), not hidden HTTP routes. Migrations live in `backend/alembic/` (host infrastructure), not inside a context package.
 
 ## Validation and errors
 

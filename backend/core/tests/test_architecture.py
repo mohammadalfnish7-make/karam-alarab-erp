@@ -87,8 +87,12 @@ def test_notify_does_not_import_work() -> None:
     assert offenders == [], f"notify imported work: {offenders}"
 
 
-def test_alembic_env_registers_work_and_notify_models() -> None:
-    env = _backend_root() / "core" / "alembic" / "env.py"
-    assert env.is_file()
+def test_host_alembic_registers_all_context_models() -> None:
+    """Migrations are host infrastructure, not inside IdentityAccess."""
+    env = _backend_root() / "alembic" / "env.py"
+    assert env.is_file(), "expected backend/alembic/env.py (Clean Architecture host)"
+    assert not (_backend_root() / "core" / "alembic").exists()
     assert _imports_package(env, "work")
     assert _imports_package(env, "notify")
+    text = env.read_text(encoding="utf-8")
+    assert "database.models" in text

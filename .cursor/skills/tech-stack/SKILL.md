@@ -67,6 +67,7 @@ Signed-in SPA talking to FastAPI over REST. No Next.js. Do not import Python dom
 ```
 backend/
   INDEX.md                 # map of backend slices
+  alembic.ini + alembic/   # host migrations (Clean Architecture: DB is a detail)
   core/                    # platform: IdentityAccess, audit, traces — see core/INDEX.md
     src/
       main.py              # composition root (mounts vertical routers)
@@ -76,7 +77,6 @@ backend/
       application/         # auth, users, audit listener
       api/                 # session/user/trace routers, deps, errors
       support/             # event bus, TraceRecorder, logging
-    alembic/               # single migration tree for all contexts
     tests/
   work/                    # WorkManagement — see work/INDEX.md
     src/work/{domain,application,api,database}/

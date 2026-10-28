@@ -123,6 +123,8 @@ Web UI is not in this slice yet.
 
 ```bash
 cd backend/core && uv run pytest
+# Migrations (host-level; DB is a Clean Architecture detail):
+cd backend/core && uv run alembic -c ../alembic.ini upgrade head
 ```
 
 ### Risks

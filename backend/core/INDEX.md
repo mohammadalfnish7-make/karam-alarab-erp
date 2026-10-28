@@ -16,8 +16,9 @@ Verticals: **[`../work/`](../work/)** (tasks), **[`../notify/`](../notify/)** (i
 | [`src/application/`](src/application/) | Auth, users, AuditListener | Login, RBAC |
 | [`src/support/`](src/support/) | EventBus, TraceRecorder, logging | Mid-process failures, correlation |
 | [`src/api/`](src/api/) | Session/user/trace routers + deps/errors | Status codes, routes |
-| [`alembic/`](alembic/) | Single migration tree (`0001` identity, `0002` work, `0003` traces) | Schema history |
 | [`tests/`](tests/) | Platform + architecture boundary tests | Regressions |
+
+Migrations live at the host: [`../alembic/`](../alembic/) (not inside IdentityAccess — Clean Architecture: DB is a detail).
 
 ## HTTP surface
 
@@ -66,4 +67,7 @@ cp .env.example .env   # set SEED_ADMIN_PASSWORD (12+)
 uv sync
 uv run uvicorn main:app --app-dir src --reload --port 8000
 uv run pytest
+
+# Schema (host alembic next to core/):
+uv run alembic -c ../alembic.ini upgrade head
 ```

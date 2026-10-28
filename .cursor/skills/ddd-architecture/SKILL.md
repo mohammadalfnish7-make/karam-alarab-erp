@@ -81,7 +81,7 @@ backend/freight/src/freight/  # later — same shape
   api/                        # FastAPI routers, Pydantic DTOs
 ```
 
-Verticals may import `core`. `core` must not import verticals except `main.py` (and Alembic env). Verticals must not import each other (compose in `main`).
+Verticals may import `core`. `core` must not import verticals except `main.py`. Verticals must not import each other (compose in `main`). Schema migrations live in host `backend/alembic/` (infrastructure detail — not inside a bounded context package).
 
 Dependency direction: `interface → application → domain ← infrastructure`.
 
