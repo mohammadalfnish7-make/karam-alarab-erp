@@ -85,7 +85,7 @@ Details: `.cursor/skills/ddd-architecture/`.
 
 ### Stack (decided)
 
-- `backend/core` — platform (IdentityAccess, Audit, ProcessTrace); `backend/work` — tasks; `backend/notify` — inbox/webhooks; FastAPI, SQLAlchemy 2.x, Alembic, PostgreSQL
+- `backend/core` — platform (IdentityAccess, Audit, ProcessTrace); `backend/work` — tasks; `backend/notify` — inbox/webhooks; `backend/filemanager` — shared file catalog; FastAPI, SQLAlchemy 2.x, Alembic, PostgreSQL
 - `frontend/` — latest stable React, TypeScript, Vite, React Router, TanStack Query, Tailwind (Node LTS) — login + session shell
 - Contract — FastAPI OpenAPI; React generates TS types from it (`npm run gen:api`)
 - Tests — latest stable pytest and Playwright

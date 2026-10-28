@@ -83,6 +83,8 @@ backend/
     tests/
   notify/                  # Notifications — see notify/INDEX.md
     src/notify/{domain,application,api,database}/
+  filemanager/             # Shared file catalog — see filemanager/INDEX.md
+    src/filemanager/{domain,application,api,database,storage}/
   # later: freight/, warehouse/
 frontend/                  # Vite + React (not in core slice yet)
 ```

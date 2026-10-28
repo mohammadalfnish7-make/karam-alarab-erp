@@ -11,11 +11,12 @@ COPY --from=ghcr.io/astral-sh/uv:0.9 /uv /usr/local/bin/uv
 
 WORKDIR /app
 
-# Platform + verticals (composition root expects sibling work/ and notify/)
+# Platform + verticals (composition root expects sibling work/, notify/, and filemanager/)
 COPY core/pyproject.toml core/uv.lock ./core/
 COPY core/src ./core/src
 COPY work/src ./work/src
 COPY notify/src ./notify/src
+COPY filemanager/src ./filemanager/src
 COPY alembic.ini ./alembic.ini
 COPY alembic ./alembic
 

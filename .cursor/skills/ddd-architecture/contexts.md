@@ -49,3 +49,11 @@ Removed from this product cut: CRM, Commercial, Trading, Finance.
 - Shared `TraceRecorder` + `core_process_traces` / `core_process_trace_steps` in `backend/core`.
 - After-commit fan-out and event handlers should `start` / `step` / `succeed|fail|partial` with a stable `correlation_id` (usually domain `event_id`) and `request_id`.
 - Query via `GET /process-traces` (`process:read`). Do not invent per-context trace tables for Freight/Warehouse.
+
+## File catalog (platform package, not a sixth context)
+
+- Package: `backend/filemanager`. Imports `core` only. `main.py` and `alembic/env.py` are the only importers.
+- Aggregate: `StoredFile`. Metadata in `file_catalog_files`. Bytes in `{upload_dir}/catalog` under a random key.
+- Port: `FileCatalog` in core (`get_file_catalog`). A module stores the file id and does not import `filemanager`.
+- Event: `FileRegistered`, adapted to an audit row in `main.py`.
+- Permissions: `files:read`, `files:write`.

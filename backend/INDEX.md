@@ -8,6 +8,7 @@ One FastAPI modular monolith (Clean Architecture: domain inward, DB/migrations o
 | [`core/`](core/) | Platform: IdentityAccess, Audit, ProcessTrace, EventBus, app factory | Auth, users, RBAC, traces |
 | [`work/`](work/) | WorkManagement | Tasks, workflows |
 | [`notify/`](notify/) | Notifications (inbox + webhooks) | Channels, deliveries, unread |
+| [`filemanager/`](filemanager/) | Shared file catalog | Name search, blob folder |
 | `freight/` | *(not built yet)* | Shipments, tracking |
 | `warehouse/` | *(not built yet)* | Locations, stock |
 

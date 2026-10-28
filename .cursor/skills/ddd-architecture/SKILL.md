@@ -74,6 +74,7 @@ Only types that are truly shared: `Money` (AED), branded ids (`UserId`, `Shipmen
 backend/core/src/             # platform: identity, audit, EventBus, TraceRecorder, main
 backend/work/src/work/        # WorkManagement (tasks) — same inner layers
 backend/notify/src/notify/    # Notifications (inbox + webhooks) — same inner layers
+backend/filemanager/src/filemanager/  # shared file catalog — same inner layers
 backend/freight/src/freight/  # later — same shape
   domain/                     # entities, value objects, domain events, ports
   application/                # commands, queries, handlers

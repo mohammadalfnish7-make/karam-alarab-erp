@@ -7,16 +7,18 @@ from pathlib import Path
 
 # Sibling vertical packages for uvicorn --app-dir src.
 _BACKEND = Path(__file__).resolve().parents[2]
-for _name in ("work", "notify"):
+for _name in ("work", "notify", "filemanager"):
     _src = _BACKEND / _name / "src"
     if _src.is_dir() and str(_src) not in sys.path:
         sys.path.insert(0, str(_src))
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 from starlette.middleware.base import BaseHTTPMiddleware
 
 import database.models  # noqa: F401 — platform tables
+import filemanager.database.models  # noqa: F401 — file catalog tables (composition root)
 import notify.database.models  # noqa: F401 — notify tables (composition root)
 import work.database.models  # noqa: F401 — work_* task tables (composition root)
 from api.errors import register_exception_handlers
@@ -34,13 +36,18 @@ from domain.identity.events import (
     UserRegistered,
     UserRolesChanged,
 )
+from domain.shared.clock import SystemClock
 from domain.shared.domain_event import DomainEvent
+from domain.shared.file_catalog import FileCatalog
+from filemanager.api.file_router import router as file_router
+from filemanager.application.file_service import build_file_service
+from filemanager.domain.events import FileRegistered
 from notify.api.channel_router import router as channel_router
 from notify.api.delivery_router import router as delivery_router
 from notify.api.notification_router import router as notification_router
 from notify.application.commands import AssignNotifyCommand
 from notify.application.notify_listener import NotifyListener
-from support.events import EventBus
+from support.events import EventBus, UnitOfWork
 from support.logging import configure_logging, request_id_var
 from support.tracing import TraceRecorder
 from work.api.work_router import router as work_router
@@ -106,6 +113,35 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         event_bus.subscribe(event_type, audit_listener.handle)
     event_bus.subscribe(TaskAssigned, on_task_assigned)
 
+    def on_file_registered(event: DomainEvent) -> None:
+        """Adapt FileRegistered → audit row (filemanager does not write audit itself)."""
+        if not isinstance(event, FileRegistered):
+            return
+        audit_listener.record(
+            occurred_at=event.occurred_at,
+            actor=event.actor_email,
+            action="FileRegistered",
+            entity="stored_file",
+            entity_id=event.aggregate_id,
+            summary=event.summary,
+        )
+
+    event_bus.subscribe(FileRegistered, on_file_registered)
+
+    def file_catalog_factory(
+        *,
+        session: Session,
+        uow: UnitOfWork,
+        upload_dir: Path,
+    ) -> FileCatalog:
+        """Request-scoped FileCatalog. Callers depend on the port, not this class."""
+        return build_file_service(
+            session=session,
+            uow=uow,
+            upload_dir=upload_dir,
+            clock=SystemClock(),
+        )
+
     upload_dir = Path(settings.upload_dir)
 
     @asynccontextmanager
@@ -124,6 +160,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.settings = settings
         app.state.upload_dir = upload_dir
         app.state.trace_recorder = trace_recorder
+        app.state.file_catalog_factory = file_catalog_factory
         yield
         engine.dispose()
 
@@ -134,6 +171,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.upload_dir = upload_dir
     app.state.trace_recorder = trace_recorder
+    app.state.file_catalog_factory = file_catalog_factory
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[settings.web_origin],
@@ -150,6 +188,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(notification_router)
     app.include_router(delivery_router)
     app.include_router(trace_router)
+    app.include_router(file_router)
 
     @app.get("/health")
     def health() -> dict[str, str]:

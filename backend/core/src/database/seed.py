@@ -29,6 +29,8 @@ SEED_PERMISSIONS = (
     "work:attach",
     "work:admin",
     "process:read",
+    "files:read",
+    "files:write",
 )
 
 # Default grants per role (admin gets every permission separately as superuser + links).
@@ -40,6 +42,8 @@ SEED_ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "work:transition",
         "work:attach",
         "process:read",
+        "files:read",
+        "files:write",
     ),
     "warehouse": (
         "work:read",
@@ -47,10 +51,13 @@ SEED_ROLE_PERMISSIONS: dict[str, tuple[str, ...]] = {
         "work:transition",
         "work:attach",
         "process:read",
+        "files:read",
+        "files:write",
     ),
     "support": (
         "work:read",
         "process:read",
+        "files:read",
     ),
     "sales": (
         "work:read",

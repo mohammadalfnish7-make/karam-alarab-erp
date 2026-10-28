@@ -18,6 +18,7 @@ def _domain_roots() -> list[Path]:
         backend / "core" / "src" / "domain",
         backend / "work" / "src" / "work" / "domain",
         backend / "notify" / "src" / "notify" / "domain",
+        backend / "filemanager" / "src" / "filemanager" / "domain",
     ]
 
 
@@ -55,36 +56,48 @@ def _imports_package(path: Path, package: str) -> bool:
 
 
 def test_core_does_not_import_verticals_except_composition_root() -> None:
-    """Verticals may import core; core must not import work/notify except the host."""
+    """Verticals may import core; core must not import verticals except the host."""
     core_src = _backend_root() / "core" / "src"
     offenders: list[str] = []
     for path in core_src.rglob("*.py"):
         rel = path.relative_to(core_src).as_posix()
         if rel in CORE_VERTICAL_IMPORT_ALLOWLIST:
             continue
-        if _imports_package(path, "work") or _imports_package(path, "notify"):
+        if any(
+            _imports_package(path, package) for package in ("work", "notify", "filemanager")
+        ):
             offenders.append(rel)
     assert offenders == [], f"core imported verticals outside composition root: {offenders}"
 
 
-def test_work_does_not_import_notify() -> None:
+def test_work_does_not_import_notify_or_filemanager() -> None:
     work_src = _backend_root() / "work" / "src" / "work"
     offenders = [
         path.relative_to(work_src).as_posix()
         for path in work_src.rglob("*.py")
-        if _imports_package(path, "notify")
+        if _imports_package(path, "notify") or _imports_package(path, "filemanager")
     ]
-    assert offenders == [], f"work imported notify: {offenders}"
+    assert offenders == [], f"work imported another vertical: {offenders}"
 
 
-def test_notify_does_not_import_work() -> None:
+def test_notify_does_not_import_work_or_filemanager() -> None:
     notify_src = _backend_root() / "notify" / "src" / "notify"
     offenders = [
         path.relative_to(notify_src).as_posix()
         for path in notify_src.rglob("*.py")
-        if _imports_package(path, "work")
+        if _imports_package(path, "work") or _imports_package(path, "filemanager")
     ]
-    assert offenders == [], f"notify imported work: {offenders}"
+    assert offenders == [], f"notify imported another vertical: {offenders}"
+
+
+def test_filemanager_does_not_import_other_verticals() -> None:
+    root = _backend_root() / "filemanager" / "src" / "filemanager"
+    offenders = [
+        path.relative_to(root).as_posix()
+        for path in root.rglob("*.py")
+        if _imports_package(path, "work") or _imports_package(path, "notify")
+    ]
+    assert offenders == [], f"filemanager imported another vertical: {offenders}"
 
 
 def test_host_alembic_registers_all_context_models() -> None:
@@ -94,5 +107,6 @@ def test_host_alembic_registers_all_context_models() -> None:
     assert not (_backend_root() / "core" / "alembic").exists()
     assert _imports_package(env, "work")
     assert _imports_package(env, "notify")
+    assert _imports_package(env, "filemanager")
     text = env.read_text(encoding="utf-8")
     assert "database.models" in text

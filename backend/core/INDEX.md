@@ -2,13 +2,13 @@
 
 Login/RBAC, audit, shared EventBus/TraceRecorder, and the composition root that mounts vertical routers.
 
-Verticals: **[`../work/`](../work/)** (tasks), **[`../notify/`](../notify/)** (inbox/webhooks). Do not add those back here.
+Verticals: **[`../work/`](../work/)** (tasks), **[`../notify/`](../notify/)** (inbox/webhooks), **[`../filemanager/`](../filemanager/)** (file catalog). Do not add those back here.
 
 ## Folder map
 
 | Folder | Contains | Open when… |
 | --- | --- | --- |
-| [`src/main.py`](src/main.py) | App factory (composition root; may import `work`) | Boot / wiring |
+| [`src/main.py`](src/main.py) | App factory (composition root; may import verticals) | Boot / wiring |
 | [`src/config/`](src/config/) | Env settings (`Settings`) | `.env`, DATABASE_URL, seed admin, cookies, uploads |
 | [`src/database/`](src/database/) | Platform persistence + seed | identity, audit, traces |
 | [`src/domain/identity/`](src/domain/identity/) | User aggregate, permissions | Last-admin, role rules |
@@ -48,6 +48,15 @@ Migrations live at the host: [`../alembic/`](../alembic/) (not inside IdentityAc
 | POST/GET/PATCH/DELETE | `/notification-channels` (+ `/roll-secret`) |
 | GET/POST | `/notifications`, `/unread-count`, `/{id}/read`, `/read-all` |
 | POST | `/work/process-deliveries` (dev/test only; path kept) |
+
+### Files (mounted from `backend/filemanager`)
+
+| Method | Path |
+| --- | --- |
+| POST | `/files` |
+| GET | `/files?name=`, `/files/{id}`, `/files/{id}/content` |
+
+Permissions: `files:read`, `files:write`. Modules call the `FileCatalog` port from `get_file_catalog`. Task attachments stay on the task.
 
 ### Process traces (core, all contexts)
 

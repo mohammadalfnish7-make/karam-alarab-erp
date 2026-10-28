@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy.orm import sessionmaker
 
 from database.models.audit import AuditEntryRow
@@ -52,11 +54,31 @@ class AuditListener:
         else:
             return
 
+        self.record(
+            occurred_at=event.occurred_at,
+            actor=actor,
+            action=action,
+            entity=entity,
+            entity_id=entity_id,
+            summary=summary,
+        )
+
+    def record(
+        self,
+        *,
+        occurred_at: datetime,
+        actor: str,
+        action: str,
+        entity: str,
+        entity_id: str,
+        summary: str,
+    ) -> None:
+        """Append one audit row. Callers outside identity use this from main.py."""
         session = self._session_factory()
         try:
             session.add(
                 AuditEntryRow(
-                    occurred_at=event.occurred_at,
+                    occurred_at=occurred_at,
                     actor=actor,
                     action=action,
                     entity=entity,

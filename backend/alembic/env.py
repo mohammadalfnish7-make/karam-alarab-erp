@@ -1,7 +1,7 @@
 """Host migration environment — infrastructure detail (Clean Architecture outer ring).
 
 Registers every vertical's SQLAlchemy models onto the shared Base. Not part of
-IdentityAccess; lives beside core/work/notify so schema history is one deploy story.
+IdentityAccess; lives beside core/work/notify/filemanager so schema history is one deploy story.
 """
 
 from __future__ import annotations
@@ -18,6 +18,7 @@ for _p in (
     _BACKEND / "core" / "src",
     _BACKEND / "work" / "src",
     _BACKEND / "notify" / "src",
+    _BACKEND / "filemanager" / "src",
 ):
     if _p.is_dir() and str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
@@ -26,6 +27,7 @@ from config.settings import get_settings
 from database.engine import Base
 
 import database.models  # noqa: F401
+import filemanager.database.models  # noqa: F401
 import notify.database.models  # noqa: F401
 import work.database.models  # noqa: F401
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, Request
@@ -19,6 +20,7 @@ from database.repositories.session_repository import (
 from database.repositories.user_repository import SqlAlchemyUserRepository
 from domain.shared.clock import SystemClock
 from domain.shared.domain_error import ForbiddenError, UnauthorizedError
+from domain.shared.file_catalog import FileCatalog
 from support.events import EventBus, UnitOfWork
 
 
@@ -100,6 +102,18 @@ def get_current_actor(
     if actor is None:
         raise UnauthorizedError()
     return actor
+
+
+def get_file_catalog(
+    request: Request,
+    session: Annotated[Session, Depends(get_db)],
+    uow: Annotated[UnitOfWork, Depends(get_uow)],
+    settings: Annotated[Settings, Depends(get_settings_from_app)],
+) -> FileCatalog:
+    """Build the file catalog for this request. main.py supplies the factory."""
+    upload_dir = Path(getattr(request.app.state, "upload_dir", settings.upload_dir))
+    factory = request.app.state.file_catalog_factory
+    return factory(session=session, uow=uow, upload_dir=upload_dir)
 
 
 def require_permission(permission: str) -> Callable[..., Actor]:
