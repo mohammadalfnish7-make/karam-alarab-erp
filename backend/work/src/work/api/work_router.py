@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -11,6 +12,7 @@ from work.api.deps import get_work_service, require_permission
 from work.api.work_dto import (
     AddCommentRequest,
     AddEntityLinkRequest,
+    AddFollowerRequest,
     AddStepRequest,
     AddTaskLinkRequest,
     AssignTaskRequest,
@@ -18,7 +20,10 @@ from work.api.work_dto import (
     CreateTaskRequest,
     CreateTaskTypeRequest,
     CreateWorkflowRequest,
+    PatchTaskRequest,
     PatchTaskTypeRequest,
+    RemindTaskRequest,
+    RenameStepRequest,
     TransitionTaskRequest,
 )
 from work.application.work_service import WorkService
@@ -32,11 +37,15 @@ def _task_json(task: Task) -> dict[str, Any]:
     return {
         "id": str(task.id),
         "taskTypeId": str(task.task_type_id),
+        "reference": task.reference,
+        "sequenceNumber": task.sequence_number,
         "statusKey": task.status_key,
         "title": task.title,
         "description": task.description,
         "assigneeUserId": str(task.assignee_user_id) if task.assignee_user_id else None,
         "parentTaskId": str(task.parent_task_id) if task.parent_task_id else None,
+        "dueOn": task.due_on.isoformat() if task.due_on else None,
+        "priority": task.priority,
         "createdBy": str(task.created_by),
         "createdAt": task.created_at.isoformat(),
         "updatedAt": task.updated_at.isoformat(),
@@ -71,6 +80,7 @@ def _task_json(task: Task) -> dict[str, Any]:
         "entityLinks": [
             {"entityType": e.entity_type, "entityId": e.entity_id} for e in task.entity_links
         ],
+        "followerUserIds": [str(uid) for uid in task.follower_user_ids],
     }
 
 
@@ -177,6 +187,15 @@ def patch_task_type(
     }
 
 
+@router.get("/task-assignees")
+def list_task_assignees(
+    _: Annotated[Actor, Depends(require_permission("work:read"))],
+    work: Annotated[WorkService, Depends(get_work_service)],
+) -> list[dict[str, str]]:
+    """Active staff for assignee and follower pickers."""
+    return work.list_assignees()
+
+
 @router.post("/tasks", status_code=201)
 def create_task(
     body: CreateTaskRequest,
@@ -191,6 +210,9 @@ def create_task(
         description=body.description,
         assignee_user_id=body.assignee_user_id,
         parent_task_id=body.parent_task_id,
+        due_on=body.due_on,
+        priority=body.priority,
+        follower_user_ids=body.follower_user_ids,
     )
     return _task_json(task)
 
@@ -204,14 +226,22 @@ def list_tasks(
     assignee_user_id: Annotated[UUID | None, Query(alias="assigneeUserId")] = None,
     status_key: Annotated[str | None, Query(alias="statusKey")] = None,
     task_type_id: Annotated[UUID | None, Query(alias="taskTypeId")] = None,
+    priority: Annotated[str | None, Query()] = None,
+    due_on_from: Annotated[date | None, Query(alias="dueOnFrom")] = None,
+    due_on_to: Annotated[date | None, Query(alias="dueOnTo")] = None,
+    q: Annotated[str | None, Query(max_length=200)] = None,
 ) -> dict[str, Any]:
-    """List tasks with filters."""
+    """List tasks with filters. Omit assigneeUserId to list across all assignees."""
     items, total = work.list_tasks(
         page=page,
         page_size=page_size,
         assignee_user_id=assignee_user_id,
         status_key=status_key,
         task_type_id=task_type_id,
+        priority=priority,
+        due_on_from=due_on_from,
+        due_on_to=due_on_to,
+        q=q,
     )
     return {
         "data": [_task_json(t) for t in items],
@@ -257,15 +287,33 @@ def assign_task(
     )
 
 
+@router.patch("/tasks/{task_id}")
+def patch_task(
+    task_id: UUID,
+    body: PatchTaskRequest,
+    actor: Annotated[Actor, Depends(require_permission("work:update"))],
+    work: Annotated[WorkService, Depends(get_work_service)],
+) -> dict[str, Any]:
+    """Patch due date and/or priority."""
+    kwargs: dict[str, Any] = {}
+    if "due_on" in body.model_fields_set:
+        kwargs["due_on"] = body.due_on
+    if "priority" in body.model_fields_set and body.priority is not None:
+        kwargs["priority"] = body.priority
+    if not kwargs:
+        return _task_json(work.get_task(task_id))
+    return _task_json(work.patch_task(actor, task_id, **kwargs))
+
+
 @router.post("/tasks/{task_id}/steps", status_code=201)
 def add_step(
     task_id: UUID,
     body: AddStepRequest,
-    _: Annotated[Actor, Depends(require_permission("work:update"))],
+    actor: Annotated[Actor, Depends(require_permission("work:update"))],
     work: Annotated[WorkService, Depends(get_work_service)],
 ) -> dict[str, Any]:
-    """Add a checklist step."""
-    return _task_json(work.add_step(task_id, title=body.title))
+    """Add a checklist step (task creator only)."""
+    return _task_json(work.add_step(actor, task_id, title=body.title))
 
 
 @router.patch("/tasks/{task_id}/steps/{step_id}")
@@ -273,11 +321,38 @@ def complete_step(
     task_id: UUID,
     step_id: UUID,
     body: CompleteStepRequest,
-    _: Annotated[Actor, Depends(require_permission("work:update"))],
+    actor: Annotated[Actor, Depends(require_permission("work:update"))],
     work: Annotated[WorkService, Depends(get_work_service)],
 ) -> dict[str, Any]:
     """Complete or reopen a step."""
-    return _task_json(work.complete_step(task_id, step_id, is_done=body.is_done))
+    return _task_json(
+        work.complete_step(actor, task_id, step_id, is_done=body.is_done)
+    )
+
+
+@router.put("/tasks/{task_id}/steps/{step_id}")
+def rename_step(
+    task_id: UUID,
+    step_id: UUID,
+    body: RenameStepRequest,
+    actor: Annotated[Actor, Depends(require_permission("work:update"))],
+    work: Annotated[WorkService, Depends(get_work_service)],
+) -> dict[str, Any]:
+    """Rename a checklist step (task creator only)."""
+    return _task_json(
+        work.rename_step(actor, task_id, step_id, title=body.title)
+    )
+
+
+@router.delete("/tasks/{task_id}/steps/{step_id}")
+def delete_step(
+    task_id: UUID,
+    step_id: UUID,
+    actor: Annotated[Actor, Depends(require_permission("work:update"))],
+    work: Annotated[WorkService, Depends(get_work_service)],
+) -> dict[str, Any]:
+    """Delete a checklist step (task creator only)."""
+    return _task_json(work.delete_step(actor, task_id, step_id))
 
 
 @router.post("/tasks/{task_id}/comments", status_code=201)
@@ -328,19 +403,89 @@ def download_attachment(
     )
 
 
+@router.post("/tasks/{task_id}/followers", status_code=201)
+def add_follower(
+    task_id: UUID,
+    body: AddFollowerRequest,
+    actor: Annotated[Actor, Depends(require_permission("work:update"))],
+    work: Annotated[WorkService, Depends(get_work_service)],
+) -> dict[str, Any]:
+    """Add a follower who can remind the assignee."""
+    return _task_json(
+        work.add_follower(actor, task_id, follower_user_id=body.follower_user_id)
+    )
+
+
+@router.delete("/tasks/{task_id}/followers/{follower_user_id}", status_code=200)
+def remove_follower(
+    task_id: UUID,
+    follower_user_id: UUID,
+    actor: Annotated[Actor, Depends(require_permission("work:update"))],
+    work: Annotated[WorkService, Depends(get_work_service)],
+) -> dict[str, Any]:
+    """Remove a follower."""
+    return _task_json(
+        work.remove_follower(actor, task_id, follower_user_id=follower_user_id)
+    )
+
+
+@router.post("/tasks/{task_id}/reminders", status_code=200)
+def remind_assignee(
+    task_id: UUID,
+    body: RemindTaskRequest,
+    actor: Annotated[Actor, Depends(require_permission("work:read"))],
+    work: Annotated[WorkService, Depends(get_work_service)],
+) -> dict[str, Any]:
+    """Follower reminds the assignee (in-app + webhooks)."""
+    return _task_json(work.remind_assignee(actor, task_id, message=body.message))
+
+
 @router.post("/tasks/{task_id}/entity-links", status_code=201)
 def add_entity_link(
     task_id: UUID,
     body: AddEntityLinkRequest,
-    _: Annotated[Actor, Depends(require_permission("work:update"))],
+    actor: Annotated[Actor, Depends(require_permission("work:update"))],
     work: Annotated[WorkService, Depends(get_work_service)],
 ) -> dict[str, Any]:
     """Link an ERP entity to the task."""
     return _task_json(
         work.add_entity_link(
-            task_id, entity_type=body.entity_type, entity_id=body.entity_id
+            actor,
+            task_id,
+            entity_type=body.entity_type,
+            entity_id=body.entity_id,
         )
     )
+
+
+@router.delete("/tasks/{task_id}/entity-links/{entity_type}/{entity_id}")
+def remove_entity_link(
+    task_id: UUID,
+    entity_type: str,
+    entity_id: str,
+    actor: Annotated[Actor, Depends(require_permission("work:update"))],
+    work: Annotated[WorkService, Depends(get_work_service)],
+) -> dict[str, Any]:
+    """Unlink an ERP entity from the task (catalog file stays in the catalog)."""
+    return _task_json(
+        work.remove_entity_link(
+            actor,
+            task_id,
+            entity_type=entity_type,
+            entity_id=entity_id,
+        )
+    )
+
+
+@router.delete("/tasks/{task_id}/attachments/{attachment_id}")
+def remove_attachment(
+    task_id: UUID,
+    attachment_id: UUID,
+    actor: Annotated[Actor, Depends(require_permission("work:attach"))],
+    work: Annotated[WorkService, Depends(get_work_service)],
+) -> dict[str, Any]:
+    """Remove a direct task attachment."""
+    return _task_json(work.remove_attachment(actor, task_id, attachment_id))
 
 
 @router.post("/tasks/{task_id}/links", status_code=201)

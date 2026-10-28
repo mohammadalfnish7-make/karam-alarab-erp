@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
 
 from sqlalchemy import (
     Boolean,
+    Date,
     DateTime,
     ForeignKey,
     Integer,
@@ -75,10 +76,24 @@ class TaskTypeRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class TaskTypeSequenceRow(Base):
+    """Per-type counter for human task references (type-name-N)."""
+
+    __tablename__ = "work_task_type_sequences"
+
+    task_type_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("work_task_types.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    next_value: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+
 class TaskRow(Base):
     """Persisted work item."""
 
     __tablename__ = "work_tasks"
+    __table_args__ = (UniqueConstraint("task_type_id", "sequence_number"),)
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
     task_type_id: Mapped[UUID] = mapped_column(
@@ -89,6 +104,10 @@ class TaskRow(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     assignee_user_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
     parent_task_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True)
+    due_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    priority: Mapped[str] = mapped_column(String(16), nullable=False, default="normal")
+    reference: Mapped[str] = mapped_column(String(160), nullable=False, default="")
+    sequence_number: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_by: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -150,6 +169,19 @@ class TaskEntityLinkRow(Base):
     )
     entity_type: Mapped[str] = mapped_column(String(64), nullable=False)
     entity_id: Mapped[str] = mapped_column(String(128), nullable=False)
+
+
+class TaskFollowerRow(Base):
+    """User watching a task who can remind the assignee."""
+
+    __tablename__ = "work_task_followers"
+    __table_args__ = (UniqueConstraint("task_id", "user_id"),)
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    task_id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("work_tasks.id", ondelete="CASCADE"), nullable=False
+    )
+    user_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
 
 
 class TaskLinkRow(Base):

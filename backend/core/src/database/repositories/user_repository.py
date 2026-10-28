@@ -72,6 +72,15 @@ class SqlAlchemyUserRepository:
         ).all()
         return [self._to_domain(row) for row in rows], int(total)
 
+    def list_active_users(self) -> list[User]:
+        """Return active users ordered by email (for task assignment)."""
+        rows = self._session.scalars(
+            select(UserRow)
+            .where(UserRow.is_active.is_(True))
+            .order_by(UserRow.email)
+        ).all()
+        return [self._to_domain(row) for row in rows]
+
     def count_active_admins(self) -> int:
         """Count active users that have the admin role."""
         stmt = (

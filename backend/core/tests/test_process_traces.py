@@ -93,15 +93,20 @@ def test_assign_creates_readable_process_trace(admin_client: TestClient) -> None
 def test_process_traces_forbidden_without_permission(
     client: TestClient, admin_client: TestClient
 ) -> None:
-    admin_client.post(
+    # Seeded sales includes process:read; strip it so this user is denied.
+    cleared = admin_client.put("/roles/sales/permissions", json={"permissions": []})
+    assert cleared.status_code == 204, cleared.text
+    email = f"no-trace.{uuid4().hex[:8]}@karam-alarab.com"
+    created = admin_client.post(
         "/users",
         json={
-            "email": "no-trace@karam-alarab.com",
+            "email": email,
             "password": "password-worker12",
-            "roles": ["operations"],
+            "roles": ["sales"],
         },
     )
-    login_as(client, "no-trace@karam-alarab.com", "password-worker12")
+    assert created.status_code == 201, created.text
+    login_as(client, email, "password-worker12")
     response = client.get("/process-traces")
     assert response.status_code == 403
     assert "permission" in response.json()["error"]["message"].lower()

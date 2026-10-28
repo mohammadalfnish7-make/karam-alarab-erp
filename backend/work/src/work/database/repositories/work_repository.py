@@ -1,19 +1,21 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session
 
 from work.database.models.work import (
     TaskAttachmentRow,
     TaskCommentRow,
     TaskEntityLinkRow,
+    TaskFollowerRow,
     TaskLinkRow,
     TaskRow,
     TaskStepRow,
     TaskTypeRow,
+    TaskTypeSequenceRow,
     WorkflowRow,
     WorkflowStatusRow,
     WorkflowTransitionRow,
@@ -180,6 +182,29 @@ class SqlAlchemyWorkRepository:
 
     # --- tasks ---
 
+    def allocate_task_sequence(self, task_type_id: UUID) -> int:
+        """Reserve the next per-type sequence number (locked for concurrency)."""
+        row = self._session.get(
+            TaskTypeSequenceRow,
+            task_type_id,
+            with_for_update=True,
+        )
+        if row is None:
+            max_existing = self._session.scalar(
+                select(func.coalesce(func.max(TaskRow.sequence_number), 0)).where(
+                    TaskRow.task_type_id == task_type_id
+                )
+            )
+            next_value = int(max_existing or 0) + 1
+            row = TaskTypeSequenceRow(task_type_id=task_type_id, next_value=next_value + 1)
+            self._session.add(row)
+            self._session.flush()
+            return next_value
+        assigned = row.next_value
+        row.next_value = assigned + 1
+        self._session.flush()
+        return assigned
+
     def save_task(self, task: Task) -> None:
         """Insert or update a task and replace child collections."""
         row = self._session.get(TaskRow, task.id)
@@ -192,6 +217,10 @@ class SqlAlchemyWorkRepository:
                 description=task.description,
                 assignee_user_id=task.assignee_user_id.value if task.assignee_user_id else None,
                 parent_task_id=task.parent_task_id,
+                due_on=task.due_on,
+                priority=task.priority,
+                reference=task.reference,
+                sequence_number=task.sequence_number,
                 created_by=task.created_by.value,
                 created_at=task.created_at,
                 updated_at=task.updated_at,
@@ -204,11 +233,20 @@ class SqlAlchemyWorkRepository:
             row.assignee_user_id = (
                 task.assignee_user_id.value if task.assignee_user_id else None
             )
+            row.due_on = task.due_on
+            row.priority = task.priority
             row.updated_at = task.updated_at
+            # reference + sequence_number are immutable after create
 
         self._session.flush()
         # replace children
-        for model in (TaskStepRow, TaskCommentRow, TaskAttachmentRow, TaskEntityLinkRow):
+        for model in (
+            TaskStepRow,
+            TaskCommentRow,
+            TaskAttachmentRow,
+            TaskEntityLinkRow,
+            TaskFollowerRow,
+        ):
             existing = self._session.scalars(
                 select(model).where(model.task_id == task.id)  # type: ignore[attr-defined]
             ).all()
@@ -258,6 +296,14 @@ class SqlAlchemyWorkRepository:
                     entity_id=link.entity_id,
                 )
             )
+        for follower in task.follower_user_ids:
+            self._session.add(
+                TaskFollowerRow(
+                    id=uuid4(),
+                    task_id=task.id,
+                    user_id=follower.value,
+                )
+            )
         self._session.flush()
 
     def get_task(self, task_id: UUID) -> Task | None:
@@ -275,6 +321,10 @@ class SqlAlchemyWorkRepository:
         assignee_user_id: UUID | None = None,
         status_key: str | None = None,
         task_type_id: UUID | None = None,
+        priority: str | None = None,
+        due_on_from: date | None = None,
+        due_on_to: date | None = None,
+        q: str | None = None,
     ) -> tuple[list[Task], int]:
         """Page tasks with optional filters."""
         stmt = select(TaskRow)
@@ -288,9 +338,28 @@ class SqlAlchemyWorkRepository:
         if task_type_id is not None:
             stmt = stmt.where(TaskRow.task_type_id == task_type_id)
             count_stmt = count_stmt.where(TaskRow.task_type_id == task_type_id)
+        if priority:
+            stmt = stmt.where(TaskRow.priority == priority)
+            count_stmt = count_stmt.where(TaskRow.priority == priority)
+        if due_on_from is not None:
+            stmt = stmt.where(TaskRow.due_on >= due_on_from)
+            count_stmt = count_stmt.where(TaskRow.due_on >= due_on_from)
+        if due_on_to is not None:
+            stmt = stmt.where(TaskRow.due_on <= due_on_to)
+            count_stmt = count_stmt.where(TaskRow.due_on <= due_on_to)
+        needle = (q or "").strip()
+        if needle:
+            pattern = f"%{needle}%"
+            text_match = or_(
+                TaskRow.title.ilike(pattern),
+                TaskRow.reference.ilike(pattern),
+                TaskRow.description.ilike(pattern),
+            )
+            stmt = stmt.where(text_match)
+            count_stmt = count_stmt.where(text_match)
         total = int(self._session.scalar(count_stmt) or 0)
         rows = self._session.scalars(
-            stmt.order_by(TaskRow.created_at.desc())
+            stmt.order_by(TaskRow.updated_at.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
         ).all()
@@ -344,6 +413,9 @@ class SqlAlchemyWorkRepository:
         links = self._session.scalars(
             select(TaskEntityLinkRow).where(TaskEntityLinkRow.task_id == row.id)
         ).all()
+        followers = self._session.scalars(
+            select(TaskFollowerRow).where(TaskFollowerRow.task_id == row.id)
+        ).all()
         return Task(
             id=row.id,
             task_type_id=row.task_type_id,
@@ -355,6 +427,10 @@ class SqlAlchemyWorkRepository:
             created_at=row.created_at,
             updated_at=row.updated_at,
             parent_task_id=row.parent_task_id,
+            due_on=row.due_on,
+            priority=row.priority or "normal",
+            reference=row.reference or "",
+            sequence_number=row.sequence_number or 0,
             steps=[
                 TaskStep(id=s.id, title=s.title, position=s.position, is_done=s.is_done)
                 for s in steps
@@ -383,5 +459,6 @@ class SqlAlchemyWorkRepository:
             entity_links=[
                 EntityLink(entity_type=l.entity_type, entity_id=l.entity_id) for l in links
             ],
+            follower_user_ids=[UserId(f.user_id) for f in followers],
         )
 

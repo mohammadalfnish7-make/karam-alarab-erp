@@ -24,6 +24,8 @@ export function AppShell() {
   const navigate = useNavigate()
   const otherLocale: AppLocale = locale === 'en' ? 'ru' : 'en'
   const canAdmin = hasPermission(me, Permissions.identityRead)
+  const canWork = hasPermission(me, Permissions.workRead)
+  const canWorkAdmin = hasPermission(me, Permissions.workAdmin)
 
   return (
     <div className="flex min-h-dvh bg-[var(--color-canvas)] text-[var(--color-text)]">
@@ -42,17 +44,43 @@ export function AppShell() {
             {t('nav.home')}
           </NavLink>
 
-          {canAdmin ? (
+          {canWork ? (
+            <div className="mt-3">
+              <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-white/50">
+                {t('nav.work')}
+              </p>
+              <NavLink to={`/${locale}/tasks`} className={navClass}>
+                {t('nav.tasks')}
+              </NavLink>
+              <NavLink to={`/${locale}/priorities`} className={navClass}>
+                {t('nav.priorities')}
+              </NavLink>
+              <NavLink to={`/${locale}/due-dates`} className={navClass}>
+                {t('nav.dueDates')}
+              </NavLink>
+            </div>
+          ) : null}
+
+          {canAdmin || canWorkAdmin ? (
             <div className="mt-3">
               <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-white/50">
                 {t('nav.admin')}
               </p>
-              <NavLink to={`/${locale}/admin/users`} className={navClass}>
-                {t('nav.users')}
-              </NavLink>
-              <NavLink to={`/${locale}/admin/roles`} className={navClass}>
-                {t('nav.roles')}
-              </NavLink>
+              {canAdmin ? (
+                <>
+                  <NavLink to={`/${locale}/admin/users`} className={navClass}>
+                    {t('nav.users')}
+                  </NavLink>
+                  <NavLink to={`/${locale}/admin/roles`} className={navClass}>
+                    {t('nav.roles')}
+                  </NavLink>
+                </>
+              ) : null}
+              {canWorkAdmin ? (
+                <NavLink to={`/${locale}/admin/workflows`} className={navClass}>
+                  {t('nav.workflows')}
+                </NavLink>
+              ) : null}
             </div>
           ) : null}
 

@@ -11,8 +11,34 @@ export function HomePage() {
   const { locale: localeParam } = useParams()
   const locale = resolveLocale(localeParam)
   const canAdmin = hasPermission(me, Permissions.identityRead)
+  const canWork = hasPermission(me, Permissions.workRead)
+  const canWorkAdmin = hasPermission(me, Permissions.workAdmin)
 
   const modules = [
+    canWork
+      ? { to: `/${locale}/tasks`, title: t('nav.tasks'), body: t('work.list.subtitle') }
+      : null,
+    canWork
+      ? {
+          to: `/${locale}/priorities`,
+          title: t('nav.priorities'),
+          body: t('work.priorities.subtitle'),
+        }
+      : null,
+    canWork
+      ? {
+          to: `/${locale}/due-dates`,
+          title: t('nav.dueDates'),
+          body: t('work.dueDates.subtitle'),
+        }
+      : null,
+    canWorkAdmin
+      ? {
+          to: `/${locale}/admin/workflows`,
+          title: t('nav.workflows'),
+          body: t('work.workflows.subtitle'),
+        }
+      : null,
     canAdmin
       ? { to: `/${locale}/admin/users`, title: t('nav.users'), body: t('identity.users.subtitle') }
       : null,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -58,6 +59,28 @@ class CreateTaskRequest(ForbidModel):
     description: str = ""
     assignee_user_id: UUID | None = None
     parent_task_id: UUID | None = None
+    due_on: date | None = None
+    priority: str = "normal"
+    follower_user_ids: list[UUID] = Field(default_factory=list)
+
+
+class AddFollowerRequest(ForbidModel):
+    """Add a task follower."""
+
+    follower_user_id: UUID
+
+
+class RemindTaskRequest(ForbidModel):
+    """Optional note when a follower reminds the assignee."""
+
+    message: str = ""
+
+
+class PatchTaskRequest(ForbidModel):
+    """Patch due date and/or priority."""
+
+    due_on: date | None = None
+    priority: str | None = None
 
 
 class TransitionTaskRequest(ForbidModel):
@@ -82,6 +105,12 @@ class CompleteStepRequest(ForbidModel):
     """Mark a step done/undone."""
 
     is_done: bool = True
+
+
+class RenameStepRequest(ForbidModel):
+    """Change a checklist step title."""
+
+    title: str = Field(min_length=1, max_length=500)
 
 
 class AddCommentRequest(ForbidModel):

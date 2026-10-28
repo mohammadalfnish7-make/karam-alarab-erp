@@ -21,6 +21,7 @@ import database.models  # noqa: F401 — platform tables
 import filemanager.database.models  # noqa: F401 — file catalog tables (composition root)
 import notify.database.models  # noqa: F401 — notify tables (composition root)
 import work.database.models  # noqa: F401 — work_* task tables (composition root)
+from api.audit_router import router as audit_router
 from api.errors import register_exception_handlers
 from api.session_router import router as session_router
 from api.trace_router import router as trace_router
@@ -45,13 +46,27 @@ from filemanager.domain.events import FileRegistered
 from notify.api.channel_router import router as channel_router
 from notify.api.delivery_router import router as delivery_router
 from notify.api.notification_router import router as notification_router
-from notify.application.commands import AssignNotifyCommand
+from notify.application.commands import AssignNotifyCommand, ReminderNotifyCommand
 from notify.application.notify_listener import NotifyListener
 from support.events import EventBus, UnitOfWork
 from support.logging import configure_logging, request_id_var
 from support.tracing import TraceRecorder
 from work.api.work_router import router as work_router
-from work.domain.events import TaskAssigned
+from work.domain.events import (
+    TaskAssigned,
+    TaskAttachmentAdded,
+    TaskAttachmentRemoved,
+    TaskCommented,
+    TaskCreated,
+    TaskDueDateChanged,
+    TaskEntityLinked,
+    TaskEntityUnlinked,
+    TaskFollowerAdded,
+    TaskPriorityChanged,
+    TaskReminderRequested,
+    TaskStatusChanged,
+    TaskStepChanged,
+)
 
 
 class RequestIdMiddleware(BaseHTTPMiddleware):
@@ -103,6 +118,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             )
         )
 
+    def on_task_reminder(event: DomainEvent) -> None:
+        """Adapt TaskReminderRequested → notify ReminderNotifyCommand."""
+        if not isinstance(event, TaskReminderRequested):
+            return
+        notify_listener.handle_reminder(
+            ReminderNotifyCommand(
+                event_id=event.event_id,
+                occurred_at=event.occurred_at,
+                task_id=event.task_id,
+                title=event.title,
+                task_type_id=event.task_type_id,
+                status_key=event.status_key,
+                assignee_user_id=event.assignee_user_id,
+                assignee_email=event.assignee_email,
+                follower_user_id=event.follower_user_id,
+                follower_email=event.follower_email,
+                message=event.message,
+            )
+        )
+
     for event_type in (
         UserRegistered,
         UserDeactivated,
@@ -112,6 +147,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     ):
         event_bus.subscribe(event_type, audit_listener.handle)
     event_bus.subscribe(TaskAssigned, on_task_assigned)
+    event_bus.subscribe(TaskReminderRequested, on_task_reminder)
 
     def on_file_registered(event: DomainEvent) -> None:
         """Adapt FileRegistered → audit row (filemanager does not write audit itself)."""
@@ -127,6 +163,145 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     event_bus.subscribe(FileRegistered, on_file_registered)
+
+    def on_task_created(event: DomainEvent) -> None:
+        """Adapt TaskCreated → audit row."""
+        if not isinstance(event, TaskCreated):
+            return
+        due = f", due {event.due_on}" if event.due_on else ""
+        audit_listener.record(
+            occurred_at=event.occurred_at,
+            actor=event.actor_email or "system",
+            action="TaskCreated",
+            entity="task",
+            entity_id=event.task_id,
+            summary=f"Created “{event.title}” ({event.priority}){due}",
+        )
+
+    def on_task_assigned_audit(event: DomainEvent) -> None:
+        """Adapt TaskAssigned → audit row (notify stays on the other handler)."""
+        if not isinstance(event, TaskAssigned):
+            return
+        audit_listener.record(
+            occurred_at=event.occurred_at,
+            actor=event.assigner_email or "system",
+            action="TaskAssigned",
+            entity="task",
+            entity_id=event.task_id,
+            summary=f"Assigned to {event.assignee_email}",
+        )
+
+    def on_task_status_changed(event: DomainEvent) -> None:
+        """Adapt TaskStatusChanged → audit row."""
+        if not isinstance(event, TaskStatusChanged):
+            return
+        audit_listener.record(
+            occurred_at=event.occurred_at,
+            actor=event.actor_email or "system",
+            action="TaskStatusChanged",
+            entity="task",
+            entity_id=event.task_id,
+            summary=f"Status {event.from_status_key} → {event.to_status_key}",
+        )
+
+    def on_task_due_changed(event: DomainEvent) -> None:
+        """Adapt TaskDueDateChanged → audit row."""
+        if not isinstance(event, TaskDueDateChanged):
+            return
+        summary = (
+            f"Due date set to {event.due_on}" if event.due_on else "Due date cleared"
+        )
+        audit_listener.record(
+            occurred_at=event.occurred_at,
+            actor=event.actor_email or "system",
+            action="TaskDueDateChanged",
+            entity="task",
+            entity_id=event.task_id,
+            summary=summary,
+        )
+
+    def on_task_priority_changed(event: DomainEvent) -> None:
+        """Adapt TaskPriorityChanged → audit row."""
+        if not isinstance(event, TaskPriorityChanged):
+            return
+        audit_listener.record(
+            occurred_at=event.occurred_at,
+            actor=event.actor_email or "system",
+            action="TaskPriorityChanged",
+            entity="task",
+            entity_id=event.task_id,
+            summary=f"Priority set to {event.priority}",
+        )
+
+    def on_task_activity(event: DomainEvent) -> None:
+        """Adapt step/comment/attachment/link/follower/reminder events → audit rows."""
+        if isinstance(event, TaskStepChanged):
+            action, summary, actor = "TaskStepChanged", event.summary, event.actor_email
+            entity_id = event.task_id
+        elif isinstance(event, TaskCommented):
+            action, summary, actor = "TaskCommented", event.summary, event.actor_email
+            entity_id = event.task_id
+        elif isinstance(event, TaskAttachmentAdded):
+            action, summary, actor = (
+                "TaskAttachmentAdded",
+                event.summary,
+                event.actor_email,
+            )
+            entity_id = event.task_id
+        elif isinstance(event, TaskAttachmentRemoved):
+            action, summary, actor = (
+                "TaskAttachmentRemoved",
+                event.summary,
+                event.actor_email,
+            )
+            entity_id = event.task_id
+        elif isinstance(event, TaskEntityLinked):
+            action, summary, actor = "TaskEntityLinked", event.summary, event.actor_email
+            entity_id = event.task_id
+        elif isinstance(event, TaskEntityUnlinked):
+            action, summary, actor = (
+                "TaskEntityUnlinked",
+                event.summary,
+                event.actor_email,
+            )
+            entity_id = event.task_id
+        elif isinstance(event, TaskFollowerAdded):
+            action = "TaskFollowerAdded"
+            summary = f"Added follower {event.follower_user_id}"
+            actor = event.actor_email
+            entity_id = event.task_id
+        elif isinstance(event, TaskReminderRequested):
+            action = "TaskReminderRequested"
+            summary = f"Reminder from {event.follower_email}: {event.message}"
+            actor = event.follower_email
+            entity_id = event.task_id
+        else:
+            return
+        audit_listener.record(
+            occurred_at=event.occurred_at,
+            actor=actor or "system",
+            action=action,
+            entity="task",
+            entity_id=entity_id,
+            summary=summary,
+        )
+
+    event_bus.subscribe(TaskCreated, on_task_created)
+    event_bus.subscribe(TaskAssigned, on_task_assigned_audit)
+    event_bus.subscribe(TaskStatusChanged, on_task_status_changed)
+    event_bus.subscribe(TaskDueDateChanged, on_task_due_changed)
+    event_bus.subscribe(TaskPriorityChanged, on_task_priority_changed)
+    for event_type in (
+        TaskStepChanged,
+        TaskCommented,
+        TaskAttachmentAdded,
+        TaskAttachmentRemoved,
+        TaskEntityLinked,
+        TaskEntityUnlinked,
+        TaskFollowerAdded,
+        TaskReminderRequested,
+    ):
+        event_bus.subscribe(event_type, on_task_activity)
 
     def file_catalog_factory(
         *,
@@ -188,6 +363,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(notification_router)
     app.include_router(delivery_router)
     app.include_router(trace_router)
+    app.include_router(audit_router)
     app.include_router(file_router)
 
     @app.get("/health")
