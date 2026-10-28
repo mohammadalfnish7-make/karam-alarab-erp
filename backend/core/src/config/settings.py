@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     web_origin: str = "http://127.0.0.1:5173"
     session_cookie_name: str = "karam_session"
     session_ttl_seconds: int = 28_800
+    upload_dir: str = str(_API_ROOT / "var" / "uploads")
 
     @field_validator("database_url", mode="before")
     @classmethod

@@ -37,7 +37,12 @@ class ConflictError(DomainError):
 class NotFoundError(DomainError):
     """Missing or not visible to the caller → HTTP 404."""
 
-    def __init__(self, message: str = "Not found.", *, code: str = "not_found") -> None:
+    def __init__(
+        self,
+        message: str = "The requested item was not found.",
+        *,
+        code: str = "not_found",
+    ) -> None:
         """Create a not-found error with optional message/code."""
         super().__init__(message, code=code)
 

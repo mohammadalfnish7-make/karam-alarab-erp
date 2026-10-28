@@ -54,38 +54,38 @@ Entry point for agents: [AGENTS.md](AGENTS.md).
 
 ### Outcome
 
-Ops staff in Sharjah can create a customer, quote a shipment or trading order, move stock, update tracking, and raise an invoice without spreadsheets.
+Ops staff in Sharjah can log in, run an open (admin-configured) task engine with multi-channel assign notify, then manage shipments and warehouse stock — without spreadsheets.
 
-### In scope (platform foundation, then first vertical)
+### In scope (platform foundation, then vertical)
 
-1. Identity, RBAC, audit log
-2. Customers and contacts
-3. Quotes and bookings (air / road / trading)
-4. Shipments and tracking status
-5. Warehouse locations and stock for traded goods and 3PL goods
-6. Invoices and compensation claims
-7. English + Russian UI, AED money, Asia/Dubai time
+1. Identity, open RBAC, audit log
+2. WorkManagement — admin task types/workflows, tasks, attachments, in-app notifications, admin webhook channels
+3. Freight — shipments and tracking
+4. Warehouse — locations and stock
+5. English + Russian UI, AED money, Asia/Dubai time (when frontend ships)
 
 ### Out of scope until someone asks
 
+- CRM, Commercial (quotes), Trading catalog, Finance (invoices/claims) — removed from this product cut
 - Public marketing site rewrite
-- Customer self-serve portal (tracking is internal first)
-- Sea-freight module as a first-class mode (mentioned on the blog, not a nav service)
-- Arabic UI (prepare layout for RTL; do not ship AR copy yet)
-- Multi-company tenancy (this is one company)
+- Customer self-serve portal
+- Sea-freight as a first-class mode
+- Arabic UI (prepare RTL; do not ship AR copy yet)
+- Multi-company tenancy
 - Native mobile apps
+- Employee UI notification bell (backend inbox APIs exist first)
 
 ### Architecture (decided)
 
 **Domain-Driven Design modular monolith.** Not table-CRUD, not microservices.
 
-Eight bounded contexts in one FastAPI process and one PostgreSQL database: IdentityAccess, CRM, Commercial, Freight, Warehouse, Trading, Finance, Audit. Each context owns its tables and aggregates. Contexts collaborate by identity (`CustomerId`, `ShipmentId`) and domain/integration events. One aggregate per transaction. Domain code has no FastAPI, Pydantic, or SQLAlchemy imports.
+Five bounded contexts in one FastAPI process and one PostgreSQL database: **IdentityAccess**, **WorkManagement**, **Freight**, **Warehouse**, **Audit**. Each context owns its tables and aggregates. Contexts collaborate by identity and domain/integration events. One aggregate per transaction. Domain code has no FastAPI, Pydantic, or SQLAlchemy imports.
 
 Details: `.cursor/skills/ddd-architecture/`.
 
 ### Stack (decided)
 
-- `backend/core` — latest stable Python, FastAPI, SQLAlchemy 2.x, Alembic, PostgreSQL
+- `backend/core` — latest stable Python, FastAPI, SQLAlchemy 2.x, Alembic, PostgreSQL (IdentityAccess + WorkManagement in this tree for now)
 - `frontend/` — latest stable React, TypeScript, Vite, React Router, TanStack Query, Tailwind (Node LTS) — not in this slice yet
 - Contract — FastAPI OpenAPI; React generates TS types from it
 - Tests — latest stable pytest and Playwright
@@ -96,12 +96,11 @@ DDD stays if the host changes. Do not add NestJS, Next.js, or Prisma.
 
 ### Sequence
 
-1. DDD skeleton — shared kernel, IdentityAccess login + open RBAC **(in tree under `backend/core`)** — see [`backend/core/INDEX.md`](backend/core/INDEX.md)
-2. CRM + Commercial — a cosmetics weekly quote can be stored
+1. DDD skeleton — IdentityAccess login + open RBAC **(done under `backend/core`)** — see [`backend/core/INDEX.md`](backend/core/INDEX.md)
+2. WorkManagement — open task engine + admin notify channels + inbox **(backend in `backend/core`)**
 3. Freight — air or road shipment status is visible
-4. Warehouse — receive and pick trading SKUs
-5. Finance — invoice and claim post only through aggregate commands
-6. i18n RU parity and Playwright critical paths on CI
+4. Warehouse — receive and pick stock
+5. i18n RU parity and Playwright critical paths on CI (with frontend)
 
 Each step must be reversible and demoable on its own.
 

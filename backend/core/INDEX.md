@@ -1,41 +1,45 @@
-# Core index — login + open permissions
+# Core index — IdentityAccess + WorkManagement
 
-Everything for IdentityAccess lives under `backend/core`. Go to the folder that matches the problem; do not hunt across the tree.
+Everything for login/RBAC and the open task engine lives under `backend/core`.
 
 ## Folder map
 
 | Folder | Contains | Open when… |
 | --- | --- | --- |
 | [`src/main.py`](src/main.py) | App factory, CORS, middleware, router mount | Boot / wiring |
-| [`src/config/`](src/config/) | Env settings (`Settings`) | `.env`, DATABASE_URL, seed admin, cookies |
+| [`src/config/`](src/config/) | Env settings (`Settings`) | `.env`, DATABASE_URL, seed admin, cookies, uploads |
 | [`src/database/`](src/database/) | **All persistence** | SQL, tables, seed, repos |
-| [`src/database/engine.py`](src/database/engine.py) | SQLAlchemy engine + `Base` | Connection / SQLite vs Postgres |
-| [`src/database/models/`](src/database/models/) | Table definitions only | Schema / columns / indexes |
-| [`src/database/repositories/`](src/database/repositories/) | Load/save adapters | Queries, “why didn’t it save?” |
-| [`src/database/password.py`](src/database/password.py) | Argon2 hash/verify | Password hashing |
-| [`src/database/seed.py`](src/database/seed.py) | Roles, permissions, seed admin | First login / empty DB |
-| [`src/domain/`](src/domain/) | Pure rules (no FastAPI/SQLAlchemy) | Business invariant bugs |
-| [`src/domain/shared/`](src/domain/shared/) | `UserId`, errors, events, clock | Shared types |
-| [`src/domain/identity/`](src/domain/identity/) | User aggregate, permissions format, ports | Last-admin, role rules |
-| [`src/application/`](src/application/) | Use cases / services | Login flow, create user, audit listener |
-| [`src/api/`](src/api/) | HTTP: routers, DTOs, deps, error envelope | Status codes, routes, cookies |
-| [`src/support/`](src/support/) | Event bus, JSON logging | Events after commit, request logs |
-| [`alembic/`](alembic/) | Migrations | Schema history |
+| [`src/domain/identity/`](src/domain/identity/) | User aggregate, permissions | Last-admin, role rules |
+| [`src/domain/work/`](src/domain/work/) | Task engine + webhook signing/SSRF rules | Task invariants, notify crypto |
+| [`src/application/`](src/application/) | Use cases / notify listener / delivery worker | Login, tasks, channels, fan-out |
+| [`src/api/`](src/api/) | HTTP routers + DTOs | Status codes, routes |
+| [`alembic/`](alembic/) | Migrations (`0001` identity, `0002` work) | Schema history |
 | [`tests/`](tests/) | Pytest | Regressions |
-| [`var/`](var/) | Local SQLite file (gitignored `*.db`) | Local demo DB |
 
-## HTTP surface (auth)
+## HTTP surface
 
-| Method | Path | File |
-| --- | --- | --- |
-| GET | `/health` | `src/main.py` |
-| POST | `/sessions` | `src/api/session_router.py` |
-| DELETE | `/sessions/current` | `src/api/session_router.py` |
-| GET/PATCH | `/users/me`, `/users/me/password` | `src/api/user_router.py` |
-| GET/POST/PATCH | `/users`, `/users/{id}` | `src/api/user_router.py` |
-| GET | `/roles`, `/permissions` | `src/api/user_router.py` |
-| PUT | `/roles/{name}/permissions` | `src/api/user_router.py` |
-| POST | `/permissions/register` | `src/api/user_router.py` |
+### Auth
+
+| Method | Path |
+| --- | --- |
+| GET | `/health` |
+| POST/DELETE | `/sessions`, `/sessions/current` |
+| GET/PATCH | `/users/me`, `/users/me/password` |
+| GET/POST/PATCH | `/users`, `/users/{id}` |
+| GET/PUT/POST | `/roles`, `/permissions`, … |
+
+### Work
+
+| Method | Path |
+| --- | --- |
+| POST/GET | `/workflows`, `/workflows/{id}` |
+| POST/GET/PATCH | `/task-types` |
+| POST/GET | `/tasks`, `/tasks/{id}` |
+| POST/PATCH | `/tasks/{id}/transitions`, `/assignee`, `/steps`, `/comments`, `/attachments`, `/entity-links`, `/links` |
+| POST/GET/PATCH/DELETE | `/notification-channels` (+ `/roll-secret`) |
+| GET/POST | `/notifications`, `/unread-count`, `/{id}/read`, `/read-all` |
+
+Task types and channels start **empty** — admin creates them. Assign enqueues inbox + webhook deliveries; run `process_pending_deliveries` (worker) to POST.
 
 ## Run
 

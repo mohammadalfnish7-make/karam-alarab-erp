@@ -11,13 +11,10 @@ Internal ERP for one company: Karam Al Arab, Sharjah Industrial Area 11, UAE. Pu
 
 | Role | Job | Default access |
 | --- | --- | --- |
-| Sales | Quotes, bookings, customers | customers, quotes |
-| Operations | Air/road shipments, tracking, exceptions | shipments |
-| Warehouse | Receive, put-away, pick, 3PL stock | warehouse |
-| Trading | SKUs, suppliers, sales of parts/cosmetics | catalog, orders |
-| Finance | Invoices, compensation claims | invoices, claims |
-| Support | 24/7 status answers | shipments read |
-| Admin | Users, roles, audit | all |
+| Operations | Air/road shipments, tracking, exceptions, work tasks | shipments, work |
+| Warehouse | Receive, put-away, pick, stock | warehouse, work |
+| Support | 24/7 status answers | shipments read, work read |
+| Admin | Users, roles, audit, task types, notify channels | all |
 
 Do not invent extra personas. A person can hold more than one role.
 
@@ -26,15 +23,14 @@ Do not invent extra personas. A person can hold more than one role.
 These are DDD contexts, not CRUD modules. Aggregates and events: `.cursor/skills/ddd-architecture/contexts.md`.
 
 1. **IdentityAccess** — users, roles, session
-2. **CRM** — B2B customers, contacts, countries in UAE/GCC/EU/CIS/Russia
-3. **Commercial** — quotes and bookings: mode (air/road/trading), goods type, weekly vs monthly
-4. **Freight** — shipments, cargo, tracking, FTL/LTL
-5. **Warehouse** — locations, 3PL stock vs owned trading stock
-6. **Trading** — SKUs (auto spare parts, perfumes, cosmetics, hygiene, cleaning supplies) and trading orders
-7. **Finance** — invoices in AED, compensation claims
-8. **Audit** — append-only log of domain events
+2. **WorkManagement** — open task types/workflows (admin-defined), tasks, attachments, in-app notifications, admin webhook channels
+3. **Freight** — shipments, cargo, tracking, FTL/LTL
+4. **Warehouse** — locations and stock
+5. **Audit** — append-only log of domain events
 
-Defer: public customer portal, sea as a first-class mode, fleet master, Arabic UI, multi-company tenancy.
+Removed from this product cut: CRM, Commercial, Trading, Finance.
+
+Defer: public customer portal, sea as a first-class mode, fleet master, Arabic UI, multi-company tenancy, employee UI (backend notify APIs first).
 
 ## Language and copy
 

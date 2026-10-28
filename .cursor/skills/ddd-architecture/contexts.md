@@ -1,86 +1,40 @@
 # Bounded contexts and aggregates
 
-Build contexts in this order: IdentityAccess → CRM → Commercial → Freight → Warehouse → Trading → Finance. Audit listens from the first mutating context.
+Build contexts in this order: IdentityAccess → WorkManagement → Freight → Warehouse. Audit listens from the first mutating context.
+
+Removed from this product cut: CRM, Commercial, Trading, Finance.
 
 ## IdentityAccess
 
 - **User** (root): email, password hash, roles, active flag. MFA fields exist but unused.
 - Invariants: cannot disable the last admin; password never on the entity as plain text.
-- Events: `UserRegistered`, `UserDeactivated`.
+- Events: `UserRegistered`, `UserDeactivated`, `UserRolesChanged`, `UserPasswordChanged`, `LoginFailed`.
 
-## CRM
+## WorkManagement
 
-- **Customer** (root) + child **Contact**.
-- Invariants: at least one contact before the customer can be quoted (enforce when Commercial asks, or require it on `Customer.activate()`).
-- Holds country in UAE/GCC/EU/CIS/Russia as a value, not a free-form continent.
-- Events: `CustomerRegistered`.
-- Other contexts store `customerId` only.
-
-## Commercial
-
-- **Quote** (root): `customerId`, mode (`air` | `road` | `trading`), goods type, cadence (`weekly` | `monthly` | `once`), money estimate.
-- Invariants: mode required; trading quotes need a goods type from the trading categories; cannot accept a cancelled quote.
-- Events: `QuoteCreated`, `QuoteAccepted`, `QuoteCancelled`.
-- Freight reacts to `QuoteAccepted` by creating a **draft** `Shipment` (new transaction).
+- **TaskType** / **Workflow** (admin config): no hardcoded business catalog; clients fetch types.
+- **Task** (root): type, status (workflow graph), title, assignee, steps, comments, attachments, entity links, peer links.
+- **NotificationChannel** (admin config): editable name + webhook URL + secret; fan-out on assign.
+- **Notification** (inbox): per-recipient in-app row for employee UI later.
+- **WebhookDelivery**: durable per-channel outbox row; worker signs and POSTs with retries.
+- Events: `TaskCreated`, `TaskAssigned`.
+- Permissions: `work:read|create|update|transition|attach|admin`.
+- Lives in `backend/core` for now (same process as IdentityAccess).
 
 ## Freight
 
 - **Shipment** (root) + child **TrackingEvent** (append-only).
-- Value objects: `Cargo` (weight, CBM, temperature note), `TransportMode` (air, road FTL/LTL/box/flatbed/refrigerated).
-- Holds `customerId`, optional `quoteId`.
-- Status machine lives on the root (see backend reference). Illegal transition throws a domain error → HTTP 409.
+- Value objects: `Cargo`, `TransportMode`.
+- Status machine on the root. Illegal transition → HTTP 409.
 - Events: `ShipmentBooked`, `ShipmentInTransit`, `ShipmentArrived`, `ShipmentDelivered`, `ShipmentMovedToException`.
-- Refrigerated cargo: a tracking event may include `TemperatureNote`; the root does not skip status because temperature is missing — ops records it when they have it.
+- Not built yet.
 
 ## Warehouse
 
-- **Location** (root): warehouse/bin in Sharjah.
-- **StockPosition** (root): `skuId?`, `customerId?` (3PL owner), `locationId`, on-hand qty.
-- Invariants: on-hand never negative; owned trading stock and 3PL stock are different positions (different `customerId` / ownership).
+- **Location** (root), **StockPosition** (root).
 - Events: `StockReceived`, `StockPicked`.
-- Do not update stock inside the `Shipment` aggregate.
-
-## Trading
-
-- **Sku** (root): category in {auto spare parts, perfumes, cosmetics, hygiene, cleaning supplies}.
-- **TradingOrder** (root): `customerId`, lines as children (`skuId`, qty, money).
-- Events: `SkuDefined`, `TradingOrderConfirmed`.
-- Warehouse listens to `TradingOrderConfirmed` to pick.
-
-## Finance
-
-- **Invoice** (root): `customerId`, optional `shipmentId` or `tradingOrderId`, lines, `Money` total, status `draft | posted`.
-- **CompensationClaim** (root): `shipmentId`, `customerId`, `Money`, status.
-- Invariants: cannot post an invoice twice; claim only from a shipment in `exception` (check via `shipmentId` + policy, not by loading Freight entities into this aggregate). Prefer reacting to `ShipmentMovedToException` to *open a draft claim*, then finance posts.
-- Events: `InvoicePosted`, `ClaimOpened`, `ClaimSettled`.
-- Dual control: posting is a command on the aggregate, not a PATCH of `status`.
+- Not built yet.
 
 ## Audit
 
 - Append-only **AuditEntry** from integration events. No business invariants besides immutability.
-
-## Folder example (Freight)
-
-```
-backend/freight/src/            # later slice; mirror backend/core layout
-  domain/
-    shipment.py                 # aggregate root
-    tracking_event.py
-    cargo.py                    # value object
-    transport_mode.py
-    shipment_status.py
-    events.py
-    ports.py                    # ShipmentRepository protocol
-  application/
-    book_shipment.py
-    move_shipment.py
-    get_shipment.py
-  database/
-    models/
-    repositories/
-  api/
-    shipment_router.py
-    shipment_dto.py
-```
-
-`book-shipment.handler.ts` loads nothing from Finance. After save, it publishes `ShipmentBooked`.

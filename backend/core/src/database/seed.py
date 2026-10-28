@@ -16,12 +16,19 @@ SEED_ROLES: list[tuple[str, bool]] = [
     ("sales", False),
     ("operations", False),
     ("warehouse", False),
-    ("trading", False),
-    ("finance", False),
     ("support", False),
 ]
 
-SEED_PERMISSIONS = ("identity_access:read", "identity_access:update")
+SEED_PERMISSIONS = (
+    "identity_access:read",
+    "identity_access:update",
+    "work:read",
+    "work:create",
+    "work:update",
+    "work:transition",
+    "work:attach",
+    "work:admin",
+)
 
 
 def seed_identity_access(session: Session, settings: Settings) -> None:

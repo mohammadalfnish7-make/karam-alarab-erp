@@ -17,63 +17,44 @@ Every feature lands in one bounded context, mutates one aggregate per transactio
 
 ## Strategic map
 
-One FastAPI process, one PostgreSQL database, **eight bounded contexts**. Each context owns its tables. No foreign keys across contexts. No shared SQLAlchemy models of another context’s entities.
+One FastAPI process, one PostgreSQL database, **five bounded contexts**. Each context owns its tables. No foreign keys across contexts. No shared SQLAlchemy models of another context’s entities.
 
 ```mermaid
 flowchart LR
   IA[IdentityAccess]
-  CRM[CRM]
-  COM[Commercial]
+  WM[WorkManagement]
   FR[Freight]
   WH[Warehouse]
-  TR[Trading]
-  FIN[Finance]
   AUD[Audit]
 
-  CRM -->|CustomerId| COM
-  CRM -->|CustomerId| FR
-  COM -->|QuoteId CustomerId| FR
-  FR -->|ShipmentId CustomerId| FIN
-  TR -->|SkuId| WH
-  CRM -->|CustomerId 3PL owner| WH
-  FR -->|ShipmentDelivered ShipmentException| FIN
-  COM -->|QuoteAccepted| FR
-  TR -->|OrderConfirmed| WH
-  IA --> CRM
-  IA --> COM
+  IA --> WM
   IA --> FR
   IA --> WH
-  IA --> TR
-  IA --> FIN
-  AUD -.->|subscribes to events| FR
-  AUD -.-> FIN
+  WM -->|UserId soft entity links| FR
+  WM --> WH
+  AUD -.->|subscribes to events| WM
+  AUD -.-> FR
 ```
 
 | Context | Ubiquitous language | Aggregate roots | Owns writes |
 | --- | --- | --- | --- |
 | IdentityAccess | User, Role, Session, Permission | `User` | users, roles, sessions |
-| CRM | Customer, Contact | `Customer` | customers, contacts |
-| Commercial | Quote, booking cadence, mode | `Quote` | quotes |
-| Freight | Shipment, cargo, FTL/LTL, tracking | `Shipment` | shipments, tracking events |
-| Warehouse | Location, stock position, 3PL vs owned | `Location`, `StockPosition` | locations, stock |
-| Trading | Sku, supplier, trading order | `Sku`, `TradingOrder` | catalog, trading orders |
-| Finance | Invoice, compensation claim, Money | `Invoice`, `CompensationClaim` | invoices, claims |
+| WorkManagement | Task, TaskType, Workflow, NotificationChannel | `Task`, channel/config | work_* tables |
+| Freight | Shipment, cargo, FTL/LTL, tracking | `Shipment` | shipments, tracking |
+| Warehouse | Location, stock position | `Location`, `StockPosition` | locations, stock |
 | Audit | AuditEntry | `AuditEntry` | audit rows |
 
-Same English word, different models (do not share a class):
-
-- **Goods / product** in Freight = cargo (weight, CBM, temperature). In Trading = SKU (category, supplier).
-- **Customer** in CRM = account + contacts. Everywhere else = `CustomerId` plus an optional name snapshot.
+Removed from this product cut: CRM, Commercial, Trading, Finance.
 
 ### Shared kernel (keep tiny)
 
-Only types that are truly shared: `Money` (AED), branded ids (`CustomerId`, `ShipmentId`, …), `PhoneE164`. No `Customer` entity in the kernel.
+Only types that are truly shared: `Money` (AED), branded ids (`UserId`, `ShipmentId`, …), `PhoneE164`.
 
 ### Context mapping
 
-- **Conformist** on ids: Freight accepts CRM’s `CustomerId` as opaque.
-- **Published language**: integration events (`QuoteAccepted`, `ShipmentDelivered`, `ShipmentMovedToException`, `StockReceived`, `InvoicePosted`).
-- **Anti-corruption layer** later, if a carrier or customs API is added. Not now.
+- **Conformist** on ids: WorkManagement stores soft `(entity_type, entity_id)` links until Freight/Warehouse validate them.
+- **Published language**: `TaskAssigned`, later `ShipmentDelivered`, `StockReceived`, …
+- **Anti-corruption layer** later, if a carrier API is added. Not now.
 
 ## Tactical rules (non-negotiable)
 
