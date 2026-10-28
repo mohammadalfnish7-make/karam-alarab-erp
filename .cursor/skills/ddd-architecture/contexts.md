@@ -14,12 +14,17 @@ Removed from this product cut: CRM, Commercial, Trading, Finance.
 
 - **TaskType** / **Workflow** (admin config): no hardcoded business catalog; clients fetch types.
 - **Task** (root): type, status (workflow graph), title, assignee, steps, comments, attachments, entity links, peer links.
-- **NotificationChannel** (admin config): editable name + webhook URL + secret; fan-out on assign.
-- **Notification** (inbox): per-recipient in-app row for employee UI later.
-- **WebhookDelivery**: durable per-channel outbox row; worker signs and POSTs with retries.
 - Events: `TaskCreated`, `TaskAssigned`.
 - Permissions: `work:read|create|update|transition|attach|admin`.
-- Lives in `backend/core` for now (same process as IdentityAccess).
+- Package: `backend/work` (imports platform `backend/core` only). Assign notify is handled by **Notifications**.
+
+## Notifications
+
+- **NotificationChannel** (admin config): name + webhook URL + secret.
+- **Notification** (inbox): per-recipient in-app row.
+- **WebhookDelivery**: durable outbox; worker signs and POSTs with retries.
+- Input: `AssignNotifyCommand` (adapted from `TaskAssigned` in composition root — notify does not import work).
+- Package: `backend/notify` (imports `core` only).
 
 ## Freight
 

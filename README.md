@@ -85,7 +85,7 @@ Details: `.cursor/skills/ddd-architecture/`.
 
 ### Stack (decided)
 
-- `backend/core` — latest stable Python, FastAPI, SQLAlchemy 2.x, Alembic, PostgreSQL (IdentityAccess + WorkManagement in this tree for now)
+- `backend/core` — platform (IdentityAccess, Audit, ProcessTrace); `backend/work` — tasks; `backend/notify` — inbox/webhooks; FastAPI, SQLAlchemy 2.x, Alembic, PostgreSQL
 - `frontend/` — latest stable React, TypeScript, Vite, React Router, TanStack Query, Tailwind (Node LTS) — not in this slice yet
 - Contract — FastAPI OpenAPI; React generates TS types from it
 - Tests — latest stable pytest and Playwright
@@ -97,7 +97,7 @@ DDD stays if the host changes. Do not add NestJS, Next.js, or Prisma.
 ### Sequence
 
 1. DDD skeleton — IdentityAccess login + open RBAC **(done under `backend/core`)** — see [`backend/core/INDEX.md`](backend/core/INDEX.md)
-2. WorkManagement — open task engine + admin notify channels + inbox **(backend in `backend/core`)**
+2. WorkManagement + Notifications — tasks under [`backend/work`](backend/work/INDEX.md); inbox/webhooks under [`backend/notify`](backend/notify/INDEX.md)
 3. Freight — air or road shipment status is visible
 4. Warehouse — receive and pick stock
 5. i18n RU parity and Playwright critical paths on CI (with frontend)

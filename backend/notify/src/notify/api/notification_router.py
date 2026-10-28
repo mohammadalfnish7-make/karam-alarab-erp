@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 from api.deps import get_current_actor, get_db
 from application.actor import Actor
-from database.repositories.work_repository import SqlAlchemyWorkRepository
+from notify.database.repositories.notify_repository import SqlAlchemyNotifyRepository
 from domain.shared.domain_error import ForbiddenError, NotFoundError
 
 router = APIRouter(tags=["notifications"])
@@ -23,7 +23,7 @@ def list_notifications(
     page_size: Annotated[int, Query(alias="pageSize", ge=1, le=100)] = 25,
 ) -> dict[str, Any]:
     """List the caller's in-app notifications."""
-    work = SqlAlchemyWorkRepository(session)
+    work = SqlAlchemyNotifyRepository(session)
     rows, total = work.list_notifications(
         recipient_user_id=actor.user_id.value, page=page, page_size=page_size
     )
@@ -54,7 +54,7 @@ def unread_count(
     session: Annotated[Session, Depends(get_db)],
 ) -> dict[str, int]:
     """Unread count for the notification bell (UI later)."""
-    work = SqlAlchemyWorkRepository(session)
+    work = SqlAlchemyNotifyRepository(session)
     return {"count": work.unread_count(actor.user_id.value)}
 
 
@@ -65,7 +65,7 @@ def mark_read(
     session: Annotated[Session, Depends(get_db)],
 ) -> Response:
     """Mark one of the caller's notifications as read."""
-    work = SqlAlchemyWorkRepository(session)
+    work = SqlAlchemyNotifyRepository(session)
     row = work.get_notification(notification_id)
     if row is None:
         raise NotFoundError("Notification not found.")
@@ -83,7 +83,7 @@ def mark_all_read(
     session: Annotated[Session, Depends(get_db)],
 ) -> Response:
     """Mark all of the caller's notifications as read."""
-    work = SqlAlchemyWorkRepository(session)
+    work = SqlAlchemyNotifyRepository(session)
     rows, _ = work.list_notifications(
         recipient_user_id=actor.user_id.value, page=1, page_size=10_000
     )

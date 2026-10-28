@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 from domain.shared.domain_error import ConflictError, ValidationError
 from domain.shared.domain_event import DomainEvent
 from domain.shared.user_id import UserId
-from domain.work.events import TaskAssigned, TaskCreated
+from work.domain.events import TaskAssigned, TaskCreated
 
 ALLOWED_ENTITY_TYPES = frozenset(
     {"user", "shipment", "location", "stock_position"}

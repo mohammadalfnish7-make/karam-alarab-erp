@@ -6,25 +6,20 @@ from typing import Annotated
 from fastapi import Depends, Request
 from sqlalchemy.orm import Session
 
-from config.settings import Settings
-from support.events import EventBus, UnitOfWork
-from pathlib import Path
-
 from application.actor import Actor
 from application.auth_service import AuthService
-from application.channel_service import ChannelService
 from application.user_service import UserService
-from application.work_service import WorkService
-from database.repositories.login_attempts import SqlAlchemyLoginAttemptStore
+from config.settings import Settings
 from database.password import Argon2PasswordHasher
+from database.repositories.login_attempts import SqlAlchemyLoginAttemptStore
 from database.repositories.role_repository import SqlAlchemyRoleRepository
 from database.repositories.session_repository import (
     SqlAlchemySessionRepository,
 )
 from database.repositories.user_repository import SqlAlchemyUserRepository
-from database.repositories.work_repository import SqlAlchemyWorkRepository
 from domain.shared.clock import SystemClock
 from domain.shared.domain_error import ForbiddenError, UnauthorizedError
+from support.events import EventBus, UnitOfWork
 
 
 def get_settings_from_app(request: Request) -> Settings:
@@ -85,37 +80,6 @@ def get_user_service(
         hasher=Argon2PasswordHasher(),
         clock=SystemClock(),
         uow=uow,
-    )
-
-
-def get_work_service(
-    request: Request,
-    session: Annotated[Session, Depends(get_db)],
-    uow: Annotated[UnitOfWork, Depends(get_uow)],
-    settings: Annotated[Settings, Depends(get_settings_from_app)],
-) -> WorkService:
-    """Wire WorkService for this request."""
-    upload_dir = Path(getattr(request.app.state, "upload_dir", settings.upload_dir))
-    return WorkService(
-        work=SqlAlchemyWorkRepository(session),
-        users=SqlAlchemyUserRepository(session),
-        clock=SystemClock(),
-        uow=uow,
-        upload_dir=upload_dir,
-    )
-
-
-def get_channel_service(
-    session: Annotated[Session, Depends(get_db)],
-    uow: Annotated[UnitOfWork, Depends(get_uow)],
-    settings: Annotated[Settings, Depends(get_settings_from_app)],
-) -> ChannelService:
-    """Wire ChannelService for this request."""
-    return ChannelService(
-        work=SqlAlchemyWorkRepository(session),
-        clock=SystemClock(),
-        uow=uow,
-        settings=settings,
     )
 
 

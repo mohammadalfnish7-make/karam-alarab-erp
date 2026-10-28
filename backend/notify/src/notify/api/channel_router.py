@@ -5,10 +5,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Response
 
-from api.deps import get_channel_service, require_permission
-from api.work_dto import CreateChannelRequest, PatchChannelRequest
 from application.actor import Actor
-from application.channel_service import ChannelService
+from notify.api.deps import get_channel_service, require_permission
+from notify.api.dto import CreateChannelRequest, PatchChannelRequest
+from notify.application.channel_service import ChannelService
 
 router = APIRouter(tags=["notification-channels"])
 

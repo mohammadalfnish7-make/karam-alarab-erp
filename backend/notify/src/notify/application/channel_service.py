@@ -5,10 +5,10 @@ from datetime import timedelta
 from uuid import UUID
 
 from config.settings import Settings
-from database.repositories.work_repository import SqlAlchemyWorkRepository
+from notify.database.repositories.notify_repository import SqlAlchemyNotifyRepository
 from domain.shared.clock import Clock
 from domain.shared.domain_error import ConflictError, NotFoundError, ValidationError
-from domain.work.webhook_url import validate_webhook_url
+from notify.domain.webhook_url import validate_webhook_url
 from support.events import UnitOfWork
 
 SECRET_ROLL_OVERLAP = timedelta(hours=24)
@@ -20,7 +20,7 @@ class ChannelService:
     def __init__(
         self,
         *,
-        work: SqlAlchemyWorkRepository,
+        work: SqlAlchemyNotifyRepository,
         clock: Clock,
         uow: UnitOfWork,
         settings: Settings,

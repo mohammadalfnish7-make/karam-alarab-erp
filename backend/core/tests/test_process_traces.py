@@ -6,9 +6,9 @@ from uuid import uuid4
 import httpx
 from fastapi.testclient import TestClient
 
-from application.delivery_worker import process_pending_deliveries
-from domain.work.events import TaskAssigned
 from helpers import login_as
+from notify.application.delivery_worker import process_pending_deliveries
+from work.domain.events import TaskAssigned
 
 
 def _workflow_and_type(admin_client: TestClient) -> str:
@@ -158,7 +158,7 @@ def test_enqueue_failure_leaves_failed_trace(
 def test_mid_enqueue_failure_marks_assign_notify_failed(
     admin_client: TestClient, monkeypatch
 ) -> None:
-    from database.repositories.work_repository import SqlAlchemyWorkRepository
+    from notify.database.repositories.notify_repository import SqlAlchemyNotifyRepository
 
     worker = admin_client.post(
         "/users",
@@ -173,7 +173,7 @@ def test_mid_enqueue_failure_marks_assign_notify_failed(
     def boom_inbox(self, *args, **kwargs):  # noqa: ANN001
         raise RuntimeError("simulated inbox write failure")
 
-    monkeypatch.setattr(SqlAlchemyWorkRepository, "create_notification", boom_inbox)
+    monkeypatch.setattr(SqlAlchemyNotifyRepository, "create_notification", boom_inbox)
 
     created = admin_client.post(
         "/tasks",

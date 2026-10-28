@@ -1,14 +1,25 @@
 from __future__ import annotations
 
+import sys
 from logging.config import fileConfig
+from pathlib import Path
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
+
+_ROOT = Path(__file__).resolve().parents[1]
+_SRC = _ROOT / "src"
+_BACKEND = _ROOT.parent
+for _p in (_SRC, _BACKEND / "work" / "src", _BACKEND / "notify" / "src"):
+    if _p.is_dir() and str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
 
 from config.settings import get_settings
 from database.engine import Base
 
 import database.models  # noqa: F401
+import notify.database.models  # noqa: F401
+import work.database.models  # noqa: F401
 
 
 config = context.config

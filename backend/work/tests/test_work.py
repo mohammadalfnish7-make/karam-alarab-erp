@@ -8,9 +8,9 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from application.delivery_worker import process_pending_deliveries
-from domain.work.signing import verify_webhook_signature
 from helpers import ADMIN_EMAIL, ADMIN_PASSWORD, login_as
+from notify.application.delivery_worker import process_pending_deliveries
+from notify.domain.signing import verify_webhook_signature
 
 
 def _create_workflow(admin_client: TestClient) -> str:

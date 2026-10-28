@@ -71,12 +71,17 @@ Only types that are truly shared: `Money` (AED), branded ids (`UserId`, `Shipmen
 ## Layers inside each context
 
 ```
-backend/freight/src/          # example later slice (same shape as backend/core)
+backend/core/src/             # platform: identity, audit, EventBus, TraceRecorder, main
+backend/work/src/work/        # WorkManagement (tasks) — same inner layers
+backend/notify/src/notify/    # Notifications (inbox + webhooks) — same inner layers
+backend/freight/src/freight/  # later — same shape
   domain/                     # entities, value objects, domain events, ports
   application/                # commands, queries, handlers
   database/                   # SQLAlchemy models + repositories (all DB code here)
   api/                        # FastAPI routers, Pydantic DTOs
 ```
+
+Verticals may import `core`. `core` must not import verticals except `main.py` (and Alembic env). Verticals must not import each other (compose in `main`).
 
 Dependency direction: `interface → application → domain ← infrastructure`.
 
@@ -103,7 +108,7 @@ Never put the status machine or money rules only on the Pydantic DTO.
 
 ## ProcessTrace (core, all contexts)
 
-Readable mid-process journeys live in core (`TraceRecorder`, `core_process_traces`). WorkManagement is the first adopter. When Freight/Warehouse add async or multi-stage flows, call the same `TraceRecorder` with stage-boundary steps and a stable `correlation_id` — do not add per-context trace tables. See [contexts.md](contexts.md).
+Readable mid-process journeys live in core (`TraceRecorder`, `core_process_traces`). Notify (`backend/notify`) is the first adopter for assign fan-out. When Freight/Warehouse add async flows, call the same `TraceRecorder` with stage-boundary steps and a stable `correlation_id` — do not add per-context trace tables. See [contexts.md](contexts.md).
 
 ## Done
 

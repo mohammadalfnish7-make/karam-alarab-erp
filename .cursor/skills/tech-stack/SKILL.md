@@ -67,18 +67,23 @@ Signed-in SPA talking to FastAPI over REST. No Next.js. Do not import Python dom
 ```
 backend/
   INDEX.md                 # map of backend slices
-  core/                    # IdentityAccess (login, RBAC, audit) — see core/INDEX.md
+  core/                    # platform: IdentityAccess, audit, traces — see core/INDEX.md
     src/
-      main.py
+      main.py              # composition root (mounts vertical routers)
       config/              # settings
-      database/            # engine, models/, repositories/, seed
+      database/            # engine, platform models/, repositories/, seed
       domain/              # shared/ + identity/ (no framework imports)
-      application/         # use cases
-      api/                 # routers, DTOs, deps, errors
-      support/             # event bus, logging
-    alembic/
+      application/         # auth, users, audit listener
+      api/                 # session/user/trace routers, deps, errors
+      support/             # event bus, TraceRecorder, logging
+    alembic/               # single migration tree for all contexts
     tests/
-  # later: crm/, commercial/, freight/, warehouse/, trading/, finance/
+  work/                    # WorkManagement — see work/INDEX.md
+    src/work/{domain,application,api,database}/
+    tests/
+  notify/                  # Notifications — see notify/INDEX.md
+    src/notify/{domain,application,api,database}/
+  # later: freight/, warehouse/
 frontend/                  # Vite + React (not in core slice yet)
 ```
 

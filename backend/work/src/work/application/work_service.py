@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 
 from application.actor import Actor
 from database.repositories.user_repository import SqlAlchemyUserRepository
-from database.repositories.work_repository import SqlAlchemyWorkRepository
+from work.database.repositories.work_repository import SqlAlchemyWorkRepository
 from domain.shared.clock import Clock
 from domain.shared.domain_error import (
     ConflictError,
@@ -16,7 +16,7 @@ from domain.shared.domain_error import (
     ValidationError,
 )
 from domain.shared.user_id import UserId
-from domain.work.task import ALLOWED_TASK_LINK_TYPES, Task
+from work.domain.task import ALLOWED_TASK_LINK_TYPES, Task
 from support.events import UnitOfWork
 
 _KEY_RE = re.compile(r"^[a-z][a-z0-9_]{1,62}$")

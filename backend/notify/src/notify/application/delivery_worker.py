@@ -9,9 +9,9 @@ from typing import Any
 import httpx
 from sqlalchemy.orm import sessionmaker
 
-from database.models.work import NotificationChannelRow, WebhookDeliveryRow
-from database.repositories.work_repository import SqlAlchemyWorkRepository
-from domain.work.signing import sign_webhook_body
+from notify.database.models.notify import NotificationChannelRow, WebhookDeliveryRow
+from notify.database.repositories.notify_repository import SqlAlchemyNotifyRepository
+from notify.domain.signing import sign_webhook_body
 from support.tracing import TraceRecorder
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ def process_pending_deliveries(
     try:
         session = session_factory()
         try:
-            work = SqlAlchemyWorkRepository(session)
+            work = SqlAlchemyNotifyRepository(session)
             deliveries = work.claim_due_deliveries(now=moment, limit=limit)
             for delivery in deliveries:
                 channel = work.get_channel(delivery.channel_id)

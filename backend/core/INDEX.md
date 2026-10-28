@@ -1,21 +1,23 @@
-# Core index — IdentityAccess + WorkManagement
+# Core index — platform (IdentityAccess + Audit + ProcessTrace)
 
-Everything for login/RBAC and the open task engine lives under `backend/core`.
+Login/RBAC, audit, shared EventBus/TraceRecorder, and the composition root that mounts vertical routers.
+
+Verticals: **[`../work/`](../work/)** (tasks), **[`../notify/`](../notify/)** (inbox/webhooks). Do not add those back here.
 
 ## Folder map
 
 | Folder | Contains | Open when… |
 | --- | --- | --- |
-| [`src/main.py`](src/main.py) | App factory, CORS, middleware, router mount | Boot / wiring |
+| [`src/main.py`](src/main.py) | App factory (composition root; may import `work`) | Boot / wiring |
 | [`src/config/`](src/config/) | Env settings (`Settings`) | `.env`, DATABASE_URL, seed admin, cookies, uploads |
-| [`src/database/`](src/database/) | **All persistence** | SQL, tables, seed, repos |
+| [`src/database/`](src/database/) | Platform persistence + seed | identity, audit, traces |
 | [`src/domain/identity/`](src/domain/identity/) | User aggregate, permissions | Last-admin, role rules |
-| [`src/domain/work/`](src/domain/work/) | Task engine + webhook signing/SSRF rules | Task invariants, notify crypto |
-| [`src/application/`](src/application/) | Use cases / notify listener / delivery worker | Login, tasks, channels, fan-out |
-| [`src/support/tracing.py`](src/support/tracing.py) | **Core ProcessTrace** recorder (all contexts) | Mid-process failures, correlation |
-| [`src/api/`](src/api/) | HTTP routers + DTOs | Status codes, routes |
-| [`alembic/`](alembic/) | Migrations (`0001` identity, `0002` work, `0003` traces) | Schema history |
-| [`tests/`](tests/) | Pytest | Regressions |
+| [`src/domain/shared/`](src/domain/shared/) | Shared kernel (errors, events, ids) | Cross-context types |
+| [`src/application/`](src/application/) | Auth, users, AuditListener | Login, RBAC |
+| [`src/support/`](src/support/) | EventBus, TraceRecorder, logging | Mid-process failures, correlation |
+| [`src/api/`](src/api/) | Session/user/trace routers + deps/errors | Status codes, routes |
+| [`alembic/`](alembic/) | Single migration tree (`0001` identity, `0002` work, `0003` traces) | Schema history |
+| [`tests/`](tests/) | Platform + architecture boundary tests | Regressions |
 
 ## HTTP surface
 
@@ -29,7 +31,7 @@ Everything for login/RBAC and the open task engine lives under `backend/core`.
 | GET/POST/PATCH | `/users`, `/users/{id}` |
 | GET/PUT/POST | `/roles`, `/permissions`, … |
 
-### Work
+### Work (mounted from `backend/work`)
 
 | Method | Path |
 | --- | --- |
@@ -37,9 +39,14 @@ Everything for login/RBAC and the open task engine lives under `backend/core`.
 | POST/GET/PATCH | `/task-types` |
 | POST/GET | `/tasks`, `/tasks/{id}` |
 | POST/PATCH | `/tasks/{id}/transitions`, `/assignee`, `/steps`, `/comments`, `/attachments`, `/entity-links`, `/links` |
+
+### Notify (mounted from `backend/notify`)
+
+| Method | Path |
+| --- | --- |
 | POST/GET/PATCH/DELETE | `/notification-channels` (+ `/roll-secret`) |
 | GET/POST | `/notifications`, `/unread-count`, `/{id}/read`, `/read-all` |
-| POST | `/work/process-deliveries` (dev/test only) |
+| POST | `/work/process-deliveries` (dev/test only; path kept) |
 
 ### Process traces (core, all contexts)
 
@@ -50,8 +57,6 @@ Everything for login/RBAC and the open task engine lives under `backend/core`.
 | GET | `/process-traces/by-correlation/{correlationId}` |
 
 Permission: `process:read`. Future Freight/Warehouse call the same `TraceRecorder` — do not add per-module trace tables.
-
-Task types and channels start **empty** — admin creates them. Assign enqueues inbox + webhook deliveries; `POST /work/process-deliveries` (or `process_pending_deliveries`) POSTs webhooks.
 
 ## Run
 
